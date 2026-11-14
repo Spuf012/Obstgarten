@@ -178,12 +178,13 @@ window.OG_HOST = {
       <details><summary class="hint" style="cursor:pointer">Was bedeuten die Rollen?</summary><dl class="kv">${Object.values(ROLLEN).map(r => `<dt>${r.label}</dt><dd>${r.text}</dd>`).join("")}</dl>
         <p class="hint" style="margin:0">Die Rolle ist eine Vorlage. Die Verwaltung kann danach für jede Person einzelne Bereiche und Grundstücke anpassen (kein Zugriff, lesen, schreiben). Ändern und löschen darf jede Person nur ihre eigenen Einträge; die Verwaltung darf alles.</p></details>
       <form class="form" id="ogNameForm"><div class="field"><label for="og_myname">Dein Anzeigename</label><input id="og_myname" value="${esc(member ? member.name : "")}"></div><div class="field" style="justify-content:flex-end"><button class="btn" type="submit">Namen speichern</button></div></form>
-      ${isOwner ? `<form class="form" id="ogAddForm" style="border-top:1px solid var(--line);padding-top:12px">
-        <p class="hint full" style="margin:0">Person freischalten: Sie registriert sich zuerst selbst in der App mit E-Mail und Passwort. Danach trägst du hier ihre E-Mail-Adresse ein.</p>
+      ${isOwner ? `<form class="form" id="ogInviteForm" style="border-top:1px solid var(--line);padding-top:12px">
+        <p class="full" style="margin:0"><b>Person einladen</b></p>
+        <p class="hint full" style="margin:0">Die Person bekommt eine E-Mail mit einem Link, legt darüber ihr Passwort fest und ist sofort mit der gewählten Rolle freigeschaltet. Hat sie sich schon selbst registriert, wird sie direkt freigeschaltet.</p>
         <div class="field"><label for="og_email">E-Mail</label><input id="og_email" type="email" autocomplete="off" required></div>
         <div class="field"><label for="og_newname">Name</label><input id="og_newname" placeholder="Vorname"></div>
         <div class="field full"><label for="og_newrole">Rolle</label><select id="og_newrole">${["lesen","erfassen","bearbeiten"].map(k => `<option value="${k}">${ROLLEN[k].label} – ${ROLLEN[k].text}</option>`).join("")}</select></div>
-        <div class="full"><button class="btn primary" type="submit">Freischalten</button></div></form>` : ""}
+        <div class="full"><button class="btn primary" type="submit">Einladung senden</button></div></form>` : ""}
       <div class="row"><span class="hint">Angemeldet als ${esc(session.user.email)}</span><span class="spacer"></span><button class="btn small" data-oglogout type="button">Abmelden</button></div>
     </div>`;
   },
@@ -192,12 +193,12 @@ window.OG_HOST = {
     if(d.ogremove){
       if(el.dataset.armed !== "1"){ el.dataset.armed = "1"; el.textContent = "Wirklich entfernen?"; return true; }
       const {data, error} = await sb.rpc("og_remove_member", {p_user: d.ogremove});
-      OG_APP.toast(error || data !== "ok" ? "Entfernen fehlgeschlagen." : "Person entfernt"); await loadMembers(); OG_APP.closeSheet(); return true;
+      window.OG_FRESH = true; OG_APP.toast(error || data !== "ok" ? "Entfernen fehlgeschlagen." : "Person entfernt"); await loadMembers(); OG_APP.closeSheet(); return true;
     }
     if(d.ogreset){
       const f = el.closest("form"), role = f.querySelector("[data-ogrole]").value;
       const {data, error} = await sb.rpc("og_set_member", {p_user: d.ogreset, p_role: role, p_rechte: null});
-      OG_APP.toast(error || data !== "ok" ? "Speichern fehlgeschlagen." : `Rechte auf Vorlage „${ROLLEN[role].label}“ gesetzt`); await loadMembers(); OG_APP.closeSheet(); return true;
+      window.OG_FRESH = true; OG_APP.toast(error || data !== "ok" ? "Speichern fehlgeschlagen." : `Rechte auf Vorlage „${ROLLEN[role].label}“ gesetzt`); await loadMembers(); OG_APP.closeSheet(); return true;
     }
     return false;
   }
@@ -216,13 +217,17 @@ document.addEventListener("submit", async e => {
     f.querySelectorAll("[data-ogr]").forEach(s => { const [kind, key] = s.dataset.ogr.split(/:(.*)/s); (kind === "b" ? r.bereiche : r.grundstuecke)[key] = s.value; });
     const same = BEREICHE.every(([k]) => r.bereiche[k] === t.bereiche[k]) && Object.entries(r.grundstuecke).every(([k, v]) => v === grundOf(t, k));
     const {data, error} = await sb.rpc("og_set_member", {p_user: f.dataset.oguser, p_role: role, p_rechte: same ? null : r});
-    OG_APP.toast(error || data !== "ok" ? "Speichern fehlgeschlagen." : "Rechte gespeichert"); await loadMembers(); OG_APP.closeSheet(); return;
+    window.OG_FRESH = true; OG_APP.toast(error || data !== "ok" ? "Speichern fehlgeschlagen." : "Rechte gespeichert"); await loadMembers(); OG_APP.closeSheet(); return;
   }
-  if(e.target.id === "ogAddForm"){
+  if(e.target.id === "ogInviteForm"){
     e.preventDefault(); e.stopImmediatePropagation();
-    const {data, error} = await sb.rpc("og_add_member", {p_email: document.getElementById("og_email").value, p_name: document.getElementById("og_newname").value, p_role: document.getElementById("og_newrole").value});
-    const msg = error ? "Freischalten fehlgeschlagen." : data === "ok" ? "Person freigeschaltet" : data === "not_found" ? "Unter dieser E-Mail hat sich noch niemand registriert." : "Nur die Verwaltung kann Personen freischalten.";
-    OG_APP.toast(msg); if(data === "ok"){ await loadMembers(); OG_APP.closeSheet(); }
+    const btn = e.target.querySelector("button[type=submit]"); btn.disabled = true; btn.textContent = "Wird gesendet …";
+    const {data, error} = await sb.functions.invoke("og-invite", {body: {email: document.getElementById("og_email").value, name: document.getElementById("og_newname").value, role: document.getElementById("og_newrole").value}});
+    let msg;
+    if(error){ msg = "Einladung fehlgeschlagen."; try{ msg = (await error.context.json()).error || msg; }catch(_){} }
+    else msg = data.status === "invited" ? "Einladung verschickt" : data.status === "existing" ? "Person war schon registriert und ist jetzt freigeschaltet" : "Das bist du selbst";
+    OG_APP.toast(msg); btn.disabled = false; btn.textContent = "Einladung senden";
+    if(!error){ e.target.reset(); await loadMembers(); }
   }
   if(e.target.id === "ogNameForm"){
     e.preventDefault(); e.stopImmediatePropagation();
@@ -294,7 +299,30 @@ gate.addEventListener("submit", async e => {
     session = data.session; await afterLogin();
   }
 });
+function setPasswordHTML(msg){
+  return `<div class="gatecard">
+    <div class="gatelogo">${document.getElementById("gateLogo").innerHTML}</div>
+    <h1>Willkommen!</h1>
+    <p class="hint">Du wurdest zum Obstgarten eingeladen. Lege jetzt dein Passwort fest – damit meldest du dich künftig mit ${session.user.email.replace(/[<>&"]/g, "")} an.</p>
+    ${msg ? `<div class="tip">${msg}</div>` : ""}
+    <form id="invitePwForm" class="form"><div class="field full"><label for="ip1">Passwort</label><input id="ip1" type="password" minlength="6" required autocomplete="new-password"></div>
+      <div class="field full"><label for="ip2">Passwort wiederholen</label><input id="ip2" type="password" minlength="6" required autocomplete="new-password"></div>
+      <div class="full"><button class="btn primary" type="submit" style="width:100%">Passwort speichern</button></div></form>
+  </div>`;
+}
+gate.addEventListener("submit", async e => {
+  if(e.target.id !== "invitePwForm") return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  const a = gate.querySelector("#ip1").value, b = gate.querySelector("#ip2").value;
+  if(a !== b){ showGate(setPasswordHTML("Die beiden Passwörter stimmen nicht überein.")); return; }
+  const {data, error} = await sb.auth.updateUser({password: a, data: {og_pw_pending: false}});
+  if(error){ showGate(setPasswordHTML("Speichern fehlgeschlagen: " + error.message.replace(/[<>&"]/g, ""))); return; }
+  if(data && data.user) session = {...session, user: data.user};
+  history.replaceState(null, "", location.pathname);
+  await afterLogin();
+}, true);
 async function afterLogin(){
+  if(session.user.user_metadata && session.user.user_metadata.og_pw_pending){ showGate(setPasswordHTML()); return; }
   await loadMembers();
   member = members[session.user.id] || null;
   if(!member){ showGate(waitingHTML()); return; }
