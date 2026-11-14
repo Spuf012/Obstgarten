@@ -1,6 +1,7 @@
 // Obstgarten – Personen verwalten (nur Verwaltung).
 // action "invite" (Standard): Supabase-Einladung per E-Mail, Eintrag in og_members mit Rolle;
 //   ist die E-Mail schon registriert, wird die Person direkt freigeschaltet.
+// action "create": Person mit echter E-Mail und Startpasswort anlegen (keine Mail); bei der ersten Anmeldung muss sie ein eigenes Passwort setzen.
 // action "test": Testperson ohne echte E-Mail anlegen (Fantasie-Adresse, sofort bestätigt, Passwort von der Verwaltung).
 // action "deletetest": Testperson samt Konto löschen (nur Konten mit Test-Merker).
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -32,6 +33,23 @@ Deno.serve(async (req) => {
   let body: any;
   try { body = await req.json(); } catch { return json({ error: "Ungültige Anfrage." }, 400); }
   const action = String(body.action || "invite");
+
+  if (action === "create") {
+    const email = String(body.email || "").trim().toLowerCase();
+    const name = String(body.name || "").trim().slice(0, 60) || email.split("@")[0];
+    const password = String(body.password || "");
+    const role = ROLES.includes(body.role) ? body.role : "lesen";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: "Bitte eine gültige E-Mail-Adresse angeben." }, 400);
+    if (password.length < 6) return json({ error: "Das Startpasswort braucht mindestens 6 Zeichen." }, 400);
+    const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name, og_pw_pending: true } });
+    if (error || !data.user) {
+      const exists = /already|exists|registered/i.test(error?.message || "") || (error as any)?.code === "email_exists";
+      return json({ error: exists ? "Zu dieser E-Mail gibt es schon ein Konto. Nutze „Per E-Mail einladen“, um es freizuschalten." : "Anlegen fehlgeschlagen: " + (error?.message || "unbekannt") }, 400);
+    }
+    const { error: e2 } = await admin.from("og_members").insert({ user_id: data.user.id, name, role });
+    if (e2) { await admin.auth.admin.deleteUser(data.user.id); return json({ error: "Anlegen fehlgeschlagen: " + e2.message }, 400); }
+    return json({ status: "created", email, user_id: data.user.id });
+  }
 
   if (action === "test") {
     const name = String(body.name || "").trim().slice(0, 40);

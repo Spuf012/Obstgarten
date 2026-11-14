@@ -197,7 +197,7 @@ function myRightsHTML(esc){
   const em = effMember(), r = rechteOf(em); if(!r || em.role === "owner") return "";
   return `<div style="text-align:left;margin-top:6px"><b>${preview ? "Rechte in der Vorschau" : "Deine Rechte"}</b>${tableHTML(r, esc, true)}<p class="hint" style="margin:4px 0 0">Ändern und löschen kannst du nur, was du selbst eingetragen hast.</p></div>`;
 }
-let lastTest = null, newMode = "invite";
+let lastTest = null, lastCreated = null, newMode = "password";
 function setPreview(p){
   preview = p;
   let bar = document.getElementById("ogPreviewBar");
@@ -219,7 +219,7 @@ window.OG_HOST = {
     const list = Object.values(members).sort((a,b) => (order[a.role] ?? 9) - (order[b.role] ?? 9) || a.name.localeCompare(b.name));
     const avatarOf = m => `<span class="av av0" style="width:26px;height:26px;background:${colorFor(m.user_id)};color:#fff;border-color:transparent">${esc((m.name||"?").trim()[0]||"?").toUpperCase()}</span>`;
     const roleOpts = sel => ["lesen","erfassen","bearbeiten"].map(k => `<option value="${k}" ${k === sel ? "selected" : ""}>${ROLLEN[k].label} – ${ROLLEN[k].text}</option>`).join("");
-    const test = newMode === "test";
+    const test = newMode === "test", pw = newMode === "password";
     return `<div class="card"><span class="eyebrow">Personen</span>
       <p class="hint" style="margin:0">Person antippen, um ihre Rechte zu sehen und zu ändern.</p>
       <div class="list" style="border:0">${list.map(m => {
@@ -232,17 +232,18 @@ window.OG_HOST = {
     </div>
     <div class="card"><span class="eyebrow">Neue Person</span>
       <div class="ogseg" role="tablist" style="width:100%;box-sizing:border-box;display:flex;gap:4px;background:var(--line);border-radius:10px;padding:3px">
-        ${[["invite","Per E-Mail einladen"],["test","Testperson"]].map(([k, l]) => `<button type="button" data-ognewmode="${k}" aria-pressed="${newMode === k}" style="flex:1;border:0;border-radius:8px;padding:8px 4px;font-weight:600;background:${newMode === k ? "var(--surface)" : "transparent"};color:${newMode === k ? "var(--ink)" : "var(--muted)"}">${l}</button>`).join("")}
+        ${[["password","Mit Startpasswort"],["invite","Per Mail einladen"],["test","Testperson"]].map(([k, l]) => `<button type="button" data-ognewmode="${k}" aria-pressed="${newMode === k}" style="flex:1;border:0;border-radius:8px;padding:8px 4px;font-weight:600;background:${newMode === k ? "var(--surface)" : "transparent"};color:${newMode === k ? "var(--ink)" : "var(--muted)"}">${l}</button>`).join("")}
       </div>
+      ${pw && lastCreated ? `<div class="tip" style="text-align:left">${esc(lastCreated.name)} ist angelegt. Gib ihr diese Anmeldedaten weiter: <b>${esc(lastCreated.email)}</b> · Startpasswort: <b>${esc(lastCreated.password)}</b><br><span class="hint">Bei der ersten Anmeldung muss sie ein eigenes Passwort festlegen.</span></div>` : ""}
       ${test && lastTest ? `<div class="tip" style="text-align:left">Testperson angelegt. Anmeldung: <b>${esc(lastTest.email)}</b> · Passwort: <b>${esc(lastTest.password)}</b><br><span class="hint">Notier dir die Daten – das Passwort wird nicht noch einmal angezeigt. Anmelden am besten in einem privaten Browserfenster.</span></div>` : ""}
       <form class="form" id="ogNewForm" data-mode="${newMode}">
-        <p class="hint full" style="margin:0">${test ? "Die App vergibt eine Fantasie-Adresse zum Anmelden. Damit probierst du die Rechte in einem privaten Browserfenster wirklich aus." : "Die Person bekommt eine E-Mail mit Link, legt darüber ihr Passwort fest und ist sofort mit diesen Rechten freigeschaltet."}</p>
+        <p class="hint full" style="margin:0">${test ? "Die App vergibt eine Fantasie-Adresse zum Anmelden. Damit probierst du die Rechte in einem privaten Browserfenster wirklich aus." : pw ? "Du legst E-Mail und Startpasswort fest und gibst beides selbst weiter – es wird keine Mail verschickt. Bei der ersten Anmeldung muss die Person ein eigenes Passwort festlegen." : "Die Person bekommt eine E-Mail mit Link, legt darüber ihr Passwort fest und ist sofort mit diesen Rechten freigeschaltet."}</p>
         <div class="field"><label for="og_newname">Name</label><input id="og_newname" placeholder="${test ? "z. B. Test Erfassen" : "Vorname"}" ${test ? "required" : ""}></div>
-        ${test ? `<div class="field"><label for="og_tpw">Passwort</label><input id="og_tpw" type="text" minlength="6" autocomplete="off" required placeholder="mind. 6 Zeichen"></div>`
-               : `<div class="field"><label for="og_email">E-Mail</label><input id="og_email" type="email" autocomplete="off" required></div>`}
+        ${test ? "" : `<div class="field"><label for="og_email">E-Mail</label><input id="og_email" type="email" autocomplete="off" required></div>`}
+        ${test || pw ? `<div class="field"><label for="og_tpw">${pw ? "Startpasswort" : "Passwort"}</label><input id="og_tpw" type="text" minlength="6" autocomplete="off" required placeholder="mind. 6 Zeichen"></div>` : ""}
         <div class="field full"><label>Rolle (Vorlage – setzt die Häkchen)</label><select data-ogrole id="og_newrole">${roleOpts("lesen")}</select></div>
         <div class="full" style="overflow-x:auto">${tableHTML(TEMPLATES.lesen, esc, false)}</div>
-        <div class="full"><button class="btn primary" type="submit">${test ? "Testperson anlegen" : "Einladung senden"}</button></div>
+        <div class="full"><button class="btn primary" type="submit">${test ? "Testperson anlegen" : pw ? "Person anlegen" : "Einladung senden"}</button></div>
       </form>
     </div>
     <div class="card"><span class="eyebrow">Ansicht als …</span>
@@ -310,10 +311,10 @@ document.addEventListener("submit", async e => {
   }
   if(e.target.id === "ogNewForm"){
     e.preventDefault(); e.stopImmediatePropagation();
-    const f = e.target, test = f.dataset.mode === "test", {role, rechte} = rechteFromForm(f);
-    const btn = f.querySelector("button[type=submit]"), label = btn.textContent; btn.disabled = true; btn.textContent = test ? "Wird angelegt …" : "Wird gesendet …";
-    const name = document.getElementById("og_newname").value, password = test ? document.getElementById("og_tpw").value : "";
-    const body = test ? {action: "test", name, password, role} : {email: document.getElementById("og_email").value, name, role};
+    const f = e.target, test = f.dataset.mode === "test", pw = f.dataset.mode === "password", {role, rechte} = rechteFromForm(f);
+    const btn = f.querySelector("button[type=submit]"), label = btn.textContent; btn.disabled = true; btn.textContent = test || pw ? "Wird angelegt …" : "Wird gesendet …";
+    const name = document.getElementById("og_newname").value, password = test || pw ? document.getElementById("og_tpw").value : "";
+    const body = test ? {action: "test", name, password, role} : pw ? {action: "create", email: document.getElementById("og_email").value, name, password, role} : {email: document.getElementById("og_email").value, name, role};
     const {data, error} = await sb.functions.invoke("og-invite", {body});
     if(error){ let msg = "Fehlgeschlagen."; try{ msg = (await error.context.json()).error || msg; }catch(_){} OG_APP.toast(msg); btn.disabled = false; btn.textContent = label; return; }
     let warn = "";
@@ -322,7 +323,8 @@ document.addEventListener("submit", async e => {
       if(r2.error || r2.data !== "ok") warn = " – angepasste Häkchen bitte noch einmal speichern";
     }
     if(test) lastTest = {email: data.email, password};
-    const msg = test ? "Testperson angelegt" : data.status === "invited" ? "Einladung verschickt" : data.status === "existing" ? "Person war schon registriert und ist jetzt freigeschaltet" : "Das bist du selbst";
+    if(pw) lastCreated = {name: name || data.email, email: data.email, password};
+    const msg = test ? "Testperson angelegt" : pw ? "Person angelegt" : data.status === "invited" ? "Einladung verschickt" : data.status === "existing" ? "Person war schon registriert und ist jetzt freigeschaltet" : "Das bist du selbst";
     window.OG_FRESH = true; OG_APP.toast(msg + warn); await loadMembers(); OG_APP.closeSheet();
     return;
   }
@@ -387,7 +389,7 @@ function setPasswordHTML(msg){
   return `<div class="gatecard">
     <div class="gatelogo">${document.getElementById("gateLogo").innerHTML}</div>
     <h1>Willkommen!</h1>
-    <p class="hint">Du wurdest zum Obstgarten eingeladen. Lege jetzt dein Passwort fest – damit meldest du dich künftig mit ${session.user.email.replace(/[<>&"]/g, "")} an.</p>
+    <p class="hint">Bitte lege jetzt dein eigenes Passwort fest. Damit meldest du dich künftig mit ${session.user.email.replace(/[<>&"]/g, "")} an.</p>
     ${msg ? `<div class="tip">${msg}</div>` : ""}
     <form id="invitePwForm" class="form"><div class="field full"><label for="ip1">Passwort</label><input id="ip1" type="password" minlength="6" required autocomplete="new-password"></div>
       <div class="field full"><label for="ip2">Passwort wiederholen</label><input id="ip2" type="password" minlength="6" required autocomplete="new-password"></div>
