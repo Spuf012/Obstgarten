@@ -422,7 +422,7 @@ async function afterLogin(){
   sb.auth.onAuthStateChange((ev, s) => {
     if(ev === "PASSWORD_RECOVERY"){
       showGate(`<div class="gatecard"><h1>Neues Passwort</h1><form id="newPwForm" class="form"><div class="field full"><label for="np">Neues Passwort</label><input id="np" type="password" minlength="6" required autocomplete="new-password"></div><div class="full"><button class="btn primary" type="submit">Speichern</button></div></form></div>`);
-      gate.querySelector("#newPwForm").addEventListener("submit", async e => { e.preventDefault(); e.stopPropagation(); const {error} = await sb.auth.updateUser({password: gate.querySelector("#np").value}); if(!error){ location.hash = ""; location.reload(); } }, {once:true});
+      gate.querySelector("#newPwForm").addEventListener("submit", async e => { e.preventDefault(); e.stopPropagation(); const {error} = await sb.auth.updateUser({password: gate.querySelector("#np").value, data: {og_pw_pending: false}}); if(!error){ location.hash = ""; location.reload(); } }, {once:true});
     }
     if(ev === "SIGNED_OUT"){ session = null; }
     if(s) session = s;
