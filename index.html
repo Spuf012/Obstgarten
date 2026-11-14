@@ -586,15 +586,17 @@ let placing = null;    // draft während Positionierung
 /* ---------- Rechte (vom Host; ohne Host ist alles erlaubt) ---------- */
 const PERM = () => window.OG_PERM || null;
 const P = {
-  lvl: b => PERM() ? PERM().lvl(b) : 2,
-  grund: f => PERM() ? PERM().grund(f) : 2,
+  can: (b, a) => PERM() ? PERM().can(b, a) : true,
+  grund: (f, a) => PERM() ? PERM().grund(f, a) : true,
   owner: () => PERM() ? PERM().owner : true,
   mine: by => !PERM() || PERM().owner || (!!by && by === meId)
 };
-const canW = (b, f) => P.lvl(b) >= 2 && (f === undefined || P.grund(f) >= 2);
+// darf Aktion a ("sehen" | "anlegen" | "aendern" | "loeschen") im Bereich b (und auf Grundstück f)
+const canDo = (b, a, f) => P.can(b, a) && (f === undefined || P.grund(f, a));
+const anyWrite = b => ["anlegen", "aendern", "loeschen"].some(a => P.can(b, a));
 const TAB_BEREICH = {plan:"plan", baeume:"plan", schnitt:"pflege", ernte:"ertrag", wein:"wein", verwaltung:"verwaltung"};
 const isAdmin = () => !!(window.OG_HOST && PERM() && PERM().owner);
-const tabVisible = t => t === "verwaltung" ? isAdmin() : P.lvl(TAB_BEREICH[t]) >= 1;
+const tabVisible = t => t === "verwaltung" ? isAdmin() : P.can(TAB_BEREICH[t], "sehen");
 const ADD_BEREICH = {plan:"plan", baeume:"plan", schnitt:"plan", ernte:"ertrag", wein:"wein"};
 const NOEDIT = `<span style="min-width:4.5em"></span>`;
 
@@ -1081,7 +1083,7 @@ function viewErnte(){
 }
 
 function sheetBatch(d, isNew){
-  const ro = !canW("ertrag") || (!isNew && !P.mine(d._creator));
+  const ro = isNew ? !canDo("ertrag", "anlegen") : !(canDo("ertrag", "aendern") && P.mine(d._creator));
   const typOpts = Object.keys(VERARB_TYPEN).map(k => `<option ${k===d.typ?"selected":""}>${esc(k)}</option>`).join("");
   const obstOpts = ["", "Gemischt", ...ARTEN.filter(a => a !== "Sonstige")].map(a => `<option value="${esc(a)}" ${a===(d.obst||"")?"selected":""}>${a?esc(a):"–"}</option>`).join("");
   return `
@@ -1100,7 +1102,7 @@ function sheetBatch(d, isNew){
       <div class="field full"><label for="b_notiz">Notiz</label><textarea id="b_notiz" placeholder="z. B. 24 × Bag-in-Box 5 l, Sorten Boskoop und Bohnapfel">${esc(d.notiz||"")}</textarea></div>
       <p class="hint full" style="margin:0">Mit „Obst eingesetzt“ berechnet die App beim Saft die Ausbeute in Litern je 100 kg.</p>
     </form>
-    ${!isNew && !ro?`<button class="btn danger" id="delBatch" data-armed="0">Eintrag löschen</button>`:""}
+    ${!isNew && canDo("ertrag", "loeschen") && P.mine(d._creator)?`<button class="btn danger" id="delBatch" data-armed="0">Eintrag löschen</button>`:""}
   </div>`;
 }
 function logListHTML(f, attr){
@@ -1299,7 +1301,7 @@ function sheetCask(c){
   const stepCls = (done, due) => done ? "done" : due ? "late" : "";
   const ms = (c.messungen||[]).slice().sort((a,b) => b.datum.localeCompare(a.datum));
   return `
-  <div class="sheethead"><div class="wrap"><button class="linkbtn" data-close>‹ Zurück</button><h2>${esc(c.name)}</h2>${canW("wein") && P.mine(c._creator) ? `<button class="linkbtn" data-caskedit="${esc(c.id)}">Bearbeiten</button>` : NOEDIT}</div></div>
+  <div class="sheethead"><div class="wrap"><button class="linkbtn" data-close>‹ Zurück</button><h2>${esc(c.name)}</h2>${canDo("wein", "aendern") && P.mine(c._creator) ? `<button class="linkbtn" data-caskedit="${esc(c.id)}">Bearbeiten</button>` : NOEDIT}</div></div>
   <div class="wrap body">
     <div class="hero" style="align-items:flex-end"><span class="ptile" style="padding:10px 14px 6px">${cider(c, 92, "d"+c.id)}</span>
       <div class="t"><span class="pill ${ph.pill}">${esc(ph.label)}</span><strong style="margin-top:6px">${kg(Number(c.menge)||0)} l Apfelwein</strong><span>${esc(ph.sub||"")}</span></div></div>
@@ -1311,19 +1313,19 @@ function sheetCask(c){
         <div class="step ${c.abstich || daysUntil(p.mainEnd) <= 0 ? "done" : "now"}"><span class="dot2">${c.abstich || daysUntil(p.mainEnd) <= 0 ? "✓" : ""}</span><div class="sb"><b>Hauptgärung</b><span>${c.abstich || daysUntil(p.mainEnd) <= 0 ? "vermutlich abgeschlossen" : `voraussichtlich bis ca. ${fmtDate(p.mainEnd)}`} · bei ${kg(Number(c.temp)||16)} °C etwa ${Math.round(p.mainDays/7)} Wochen</span></div></div>
         <div class="step ${stepCls(c.abstich, !c.abstich && ph.key === "abstich")}"><span class="dot2">${c.abstich?"✓":""}</span><div class="sb"><b>Abstich</b>
           <span>${c.abstich ? fmtDate(c.abstich) + byLine(c.abstichVon) : `fällig ab ca. ${fmtDate(p.abstichDue)}`}</span>
-          ${!c.abstich && !c.abgefuellt && canW("wein") ? `<div class="inlineform"><button class="btn small" data-caskstep="abstich">Heute abgestochen</button></div>` : ""}</div></div>
+          ${!c.abstich && !c.abgefuellt && canDo("wein", "anlegen") ? `<div class="inlineform"><button class="btn small" data-caskstep="abstich">Heute abgestochen</button></div>` : ""}</div></div>
         <div class="step ${c.geklaert ? "done" : ""}"><span class="dot2">${c.geklaert?"✓":""}</span><div class="sb"><b>Geklärt</b>
           <span>${c.geklaert ? `${fmtDate(c.geklaert)}${c.klaerMethode?` · ${esc(c.klaerMethode)}`:""}${byLine(c.geklaertVon)}` : "noch nicht"}</span>
-          ${!c.geklaert && !c.abgefuellt && canW("wein") ? `<div class="inlineform"><select id="k_meth" aria-label="Klärmethode">${KLAER.map(k => `<option>${esc(k)}</option>`).join("")}</select><button class="btn small" data-caskstep="geklaert">Heute geklärt</button></div>` : ""}</div></div>
+          ${!c.geklaert && !c.abgefuellt && canDo("wein", "anlegen") ? `<div class="inlineform"><select id="k_meth" aria-label="Klärmethode">${KLAER.map(k => `<option>${esc(k)}</option>`).join("")}</select><button class="btn small" data-caskstep="geklaert">Heute geklärt</button></div>` : ""}</div></div>
         <div class="step ${c.abgefuellt ? "done" : ""}"><span class="dot2">${c.abgefuellt?"✓":""}</span><div class="sb"><b>Abgefüllt</b>
           <span>${c.abgefuellt ? `${fmtDate(c.abgefuellt)}${c.flaschen?` · ${c.flaschen} Flaschen`:""}${c.abfuellLiter?` · ${kg(c.abfuellLiter)} l`:""}${byLine(c.abgefuelltVon)}` : `trinkfertig ca. ab ${fmtDate(p.trink)} (Faustwert)`}</span>
-          ${!c.abgefuellt && canW("wein") ? `<div class="inlineform"><input id="a_fl" type="number" inputmode="numeric" min="0" placeholder="Flaschen" style="width:110px" aria-label="Anzahl Flaschen"><input id="a_l" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Liter" style="width:90px" aria-label="Abgefüllte Liter"><button class="btn small" data-caskstep="abgefuellt">Heute abgefüllt</button></div>` : ""}</div></div>
+          ${!c.abgefuellt && canDo("wein", "anlegen") ? `<div class="inlineform"><input id="a_fl" type="number" inputmode="numeric" min="0" placeholder="Flaschen" style="width:110px" aria-label="Anzahl Flaschen"><input id="a_l" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Liter" style="width:90px" aria-label="Abgefüllte Liter"><button class="btn small" data-caskstep="abgefuellt">Heute abgefüllt</button></div>` : ""}</div></div>
       </div>
     </div>
     <div class="card"><span class="eyebrow">Mostgewicht (°Oechsle)</span>
       ${oeChart(c)}
-      ${ms.length ? `<div class="mlist">${ms.map(x => `<div class="mitem"><div class="mt"><strong>${x.oe!==""&&x.oe!=null?kg(Number(x.oe))+" °Oe":"–"}${x.temp!=null&&x.temp!==""?` · ${kg(Number(x.temp))} °C`:""}</strong><small>${fmtDate(x.datum)}${x.notiz?` · ${esc(x.notiz)}`:""}${byLine(x.by)}</small></div>${canW("wein") && P.mine(x.by) ? `<button class="x" data-mdelc="${esc(x.id)}" aria-label="Messung löschen">×</button>` : ""}</div>`).join("")}</div>` : `<p class="hint" style="margin:0">Noch keine Messung. Frischer Apfelsaft hat meist etwa 45–60 °Oe, durchgegorener Apfelwein um 0 °Oe oder leicht darunter.</p>`}
-      ${!c.abgefuellt && canW("wein") ? `<form class="form" id="oeForm">
+      ${ms.length ? `<div class="mlist">${ms.map(x => `<div class="mitem"><div class="mt"><strong>${x.oe!==""&&x.oe!=null?kg(Number(x.oe))+" °Oe":"–"}${x.temp!=null&&x.temp!==""?` · ${kg(Number(x.temp))} °C`:""}</strong><small>${fmtDate(x.datum)}${x.notiz?` · ${esc(x.notiz)}`:""}${byLine(x.by)}</small></div>${canDo("wein", "loeschen") && P.mine(x.by) ? `<button class="x" data-mdelc="${esc(x.id)}" aria-label="Messung löschen">×</button>` : ""}</div>`).join("")}</div>` : `<p class="hint" style="margin:0">Noch keine Messung. Frischer Apfelsaft hat meist etwa 45–60 °Oe, durchgegorener Apfelwein um 0 °Oe oder leicht darunter.</p>`}
+      ${!c.abgefuellt && canDo("wein", "anlegen") ? `<form class="form" id="oeForm">
         <div class="field"><label for="o_d">Datum</label><input id="o_d" type="date" value="${todayISO()}"></div>
         <div class="field"><label for="o_oe">°Oechsle</label><input id="o_oe" type="number" inputmode="decimal" step="0.5" placeholder="z. B. 12"></div>
         <div class="field"><label for="o_t">Temperatur °C</label><input id="o_t" type="number" inputmode="decimal" step="0.5" placeholder="optional"></div>
@@ -1373,7 +1375,7 @@ function sheetCaskEdit(d, isNew){
       <div class="field"><label for="c_fl">Flaschen</label><input id="c_fl" type="number" inputmode="numeric" min="0" value="${esc(d.flaschen ?? "")}"></div>
       <div class="field full"><label for="c_n">Notizen</label><textarea id="c_n">${esc(d.notiz||"")}</textarea></div>
     </form>
-    ${!isNew?`<button class="btn danger" id="delCask" data-armed="0">Behälter löschen</button>`:""}
+    ${!isNew && canDo("wein", "loeschen") && P.mine(d._creator)?`<button class="btn danger" id="delCask" data-armed="0">Behälter löschen</button>`:""}
   </div>`;
 }
 function openCaskEdit(c){
@@ -1435,12 +1437,12 @@ function sheetDetail(t){
   const schnitte = (t.schnitte||[]).slice().sort().reverse();
   const schutz = (t.schutz||[]).slice().sort((a,b) => (b.datum||"").localeCompare(a.datum||""));
   return `
-  <div class="sheethead"><div class="wrap"><button class="linkbtn" data-close>‹ Zurück</button><h2>Baum ${esc(t.nr)}</h2>${canW("plan", t.flaeche) && P.mine(t._creator) ? `<button class="linkbtn" data-edit="${esc(t.id)}">Bearbeiten</button>` : NOEDIT}</div></div>
+  <div class="sheethead"><div class="wrap"><button class="linkbtn" data-close>‹ Zurück</button><h2>Baum ${esc(t.nr)}</h2>${canDo("plan", "aendern", t.flaeche) && P.mine(t._creator) ? `<button class="linkbtn" data-edit="${esc(t.id)}">Bearbeiten</button>` : NOEDIT}</div></div>
   <div class="wrap body">
     <div class="hero"><span class="big" style="background:${statusColor(st)}">${esc(t.nr)}</span>
       <div class="t"><strong>${esc(t.art||"Baum")}${t.sorte?" · "+esc(t.sorte):""}</strong><span>${esc([t.wuchs, t.pflanzjahr?"gepflanzt "+t.pflanzjahr:""].filter(Boolean).join(" · "))}</span></div></div>
     ${t.beispiel?`<div class="note">Beispieleintrag – bearbeite oder lösche ihn.</div>`:""}
-    ${P.lvl("pflege") >= 1 ? `
+    ${P.can("pflege", "sehen") ? `
     <div class="card">
       <div class="row"><span class="eyebrow">Schnitt</span><span class="spacer"></span><span class="pill ${st}">${STATUS_TXT[st]}</span></div>
       <dl class="kv">
@@ -1449,7 +1451,7 @@ function sheetDetail(t){
         <dt>Nächster Schnitt</dt><dd><b>${n?fmtDate(n):"–"}</b>${n?` <span class="hint">(${esc(dueText(t))})</span>`:""}</dd>
       </dl>
       <p class="hint">${esc(SCHNITTZEIT[t.art] || SCHNITTZEIT.Sonstige)}</p>
-      <div class="row">${canW("pflege", t.flaeche) ? `<button class="btn primary" data-cut="${esc(t.id)}">Heute geschnitten</button>` : ""}
+      <div class="row">${canDo("pflege", "anlegen", t.flaeche) ? `<button class="btn primary" data-cut="${esc(t.id)}">Heute geschnitten</button>` : ""}
         ${schnitte.length>1?`<span class="hint">Verlauf: ${schnitte.slice(0,5).map(fmtDate).join(", ")}</span>`:""}</div>
     </div>
     <div class="card">
@@ -1458,10 +1460,10 @@ function sheetDetail(t){
           <div class="mt"><strong>${esc(m.art)}${m.mittel?` · ${esc(m.mittel)}`:""}</strong>
           <small>${fmtDate(m.datum)}${m.bis?` · ${m.erledigt?"erledigt":"bis "+fmtDate(m.bis)}`:""}${m.notiz?` · ${esc(m.notiz)}`:""}${byLine(m.by)}</small></div>
           ${fr!=null?`<span class="pill ${fr<0?"due":fr<=30?"soon":"ok"}">${fr<0?`seit ${-fr} T.`:fr===0?"heute":`in ${fr} T.`}</span>`:""}
-          ${m.bis && !m.erledigt && canW("pflege", t.flaeche)?`<button class="btn small" data-mdone="${esc(m.id)}">Erledigt</button>`:""}
-          ${canW("pflege", t.flaeche) && P.mine(m.by) ? `<button class="x" data-mdel="${esc(m.id)}" aria-label="Eintrag löschen">×</button>` : ""}</div>`; }).join("")}</div>`
+          ${m.bis && !m.erledigt && canDo("pflege", "aendern", t.flaeche)?`<button class="btn small" data-mdone="${esc(m.id)}">Erledigt</button>`:""}
+          ${canDo("pflege", "loeschen", t.flaeche) && P.mine(m.by) ? `<button class="x" data-mdel="${esc(m.id)}" aria-label="Eintrag löschen">×</button>` : ""}</div>`; }).join("")}</div>`
         : `<p class="hint" style="margin:0">Noch keine Maßnahme erfasst.</p>`}
-      ${canW("pflege", t.flaeche) ? `<form class="form" id="schutzForm">
+      ${canDo("pflege", "anlegen", t.flaeche) ? `<form class="form" id="schutzForm">
         <div class="field"><label for="m_art">Maßnahme</label><select id="m_art">${schutzOptions(t.art||"Sonstige")}</select></div>
         <div class="field"><label for="m_datum">Datum</label><input id="m_datum" type="date" value="${todayISO()}"></div>
         <div class="field full" id="m_mittel_f"><label for="m_mittel">Mittel / Wirkstoff</label><input id="m_mittel" placeholder="z. B. Neem-Öl, Schwefel, Kupferpräparat"></div>
@@ -1472,11 +1474,11 @@ function sheetDetail(t){
       </form>` : ""}
     </div>
     ` : ""}
-    ${P.lvl("ertrag") >= 1 ? `
+    ${P.can("ertrag", "sehen") ? `
     <div class="card">
       <span class="eyebrow">Ertrag (kg)</span>
-      ${ys.length ? ys.map(y => `<div class="yrow"><span>${y}</span><span class="bg"><span class="bar" style="display:block;width:${Number(ert[y])/max*100}%"></span></span><b style="text-align:right" title="${esc(personName(((t.ertragMeta||{})[y]||{}).by))}">${kg(Number(ert[y]))}</b>${canW("ertrag", t.flaeche) && P.mine(((t.ertragMeta||{})[y]||{}).by || t._creator) ? `<button class="x" data-delyield="${y}" aria-label="Ertrag ${y} löschen">×</button>` : `<span></span>`}</div>`).join("") : `<p class="hint">Noch kein Ertrag erfasst.</p>`}
-      ${canW("ertrag", t.flaeche) ? `<form class="yadd" id="yieldForm">
+      ${ys.length ? ys.map(y => `<div class="yrow"><span>${y}</span><span class="bg"><span class="bar" style="display:block;width:${Number(ert[y])/max*100}%"></span></span><b style="text-align:right" title="${esc(personName(((t.ertragMeta||{})[y]||{}).by))}">${kg(Number(ert[y]))}</b>${canDo("ertrag", "loeschen", t.flaeche) && P.mine(((t.ertragMeta||{})[y]||{}).by || t._creator) ? `<button class="x" data-delyield="${y}" aria-label="Ertrag ${y} löschen">×</button>` : `<span></span>`}</div>`).join("") : `<p class="hint">Noch kein Ertrag erfasst.</p>`}
+      ${canDo("ertrag", "anlegen", t.flaeche) ? `<form class="yadd" id="yieldForm">
         <input id="yYear" type="number" inputmode="numeric" min="1990" max="2100" value="${new Date().getFullYear()}" aria-label="Erntejahr">
         <input id="yKg" type="number" inputmode="decimal" step="0.1" min="0" placeholder="kg" aria-label="Ertrag in kg">
         <button class="btn primary" type="submit">Eintragen</button>
@@ -1488,7 +1490,7 @@ function sheetDetail(t){
     <div class="card">
       <span class="eyebrow">Standort</span>
       ${isPlaced(t)?`<dl class="kv"><dt>Grundstück</dt><dd>${esc(plotName(t.flaeche))}</dd><dt>Reihe</dt><dd>${treeRow(t)} von ${plotById(t.flaeche).reihen}</dd><dt>Position</dt><dd>${kg(t.x)} m vom Westrand</dd></dl>`:`<p class="hint" style="margin:0">Noch nicht auf dem Plan eingezeichnet.${t.reihe?` Reihe ${esc(t.reihe)}.`:""}</p>`}
-      <div class="row">${canW("plan", t.flaeche) && P.mine(t._creator) ? `<button class="btn" data-place="${esc(t.id)}">${isPlaced(t)?"Neu setzen":"Auf Plan setzen"}</button>` : ""}${isPlaced(t)?`<button class="btn" data-showplan="${esc(t.id)}">Auf Plan zeigen</button>`:""}</div>
+      <div class="row">${canDo("plan", "aendern", t.flaeche) && P.mine(t._creator) ? `<button class="btn" data-place="${esc(t.id)}">${isPlaced(t)?"Neu setzen":"Auf Plan setzen"}</button>` : ""}${isPlaced(t)?`<button class="btn" data-showplan="${esc(t.id)}">Auf Plan zeigen</button>`:""}</div>
     </div>
     ${t.notiz?`<div class="card"><span class="eyebrow">Notizen</span><p style="margin:0;white-space:pre-wrap">${esc(t.notiz)}</p></div>`:""}
     ${t.geaendertVon||t.angelegtVon?`<div class="who">${avatar(t.geaendertVon||t.angelegtVon, 22)}<span>Zuletzt geändert von ${esc(personName(t.geaendertVon||t.angelegtVon))}${t.geaendertAm?` am ${fmtDate(t.geaendertAm.slice(0,10))}`:""}</span></div>`:""}
@@ -1515,7 +1517,7 @@ function sheetEdit(d, isNew){
       <div class="field"><label for="f_reihe">Reihe</label>${d.x!=null&&plotById(d.flaeche) ? `<input id="f_reihe" value="${esc(treeRow(d))}" readonly aria-describedby="f_reihe_h"><small class="hint" id="f_reihe_h">aus der Position</small>` : `<input id="f_reihe" inputmode="numeric" value="${esc(d.reihe)}" placeholder="z. B. 3">`}</div>
       <div class="full row"><span class="hint">${d.x!=null&&plotById(d.flaeche)?`Position: Reihe ${treeRow(d)}, ${kg(d.x)} m vom Westrand`:"Position: noch nicht gesetzt"}</span><span class="spacer"></span><button type="button" class="btn" id="f_place">${d.x!=null?"Neu setzen":"Auf Plan setzen"}</button></div>
     </form>
-    ${!isNew?`<button class="btn danger" id="delTree" data-armed="0">Baum löschen</button>`:""}
+    ${!isNew && canDo("plan", "loeschen", d.flaeche) && P.mine(d._creator)?`<button class="btn danger" id="delTree" data-armed="0">Baum löschen</button>`:""}
   </div>`;
 }
 function readForm(d){
@@ -1538,10 +1540,10 @@ function sheetSettings(){
   const exampleCount = trees.filter(t => t.beispiel).length + batches.filter(b => b.beispiel).length + casks.filter(c => c.beispiel).length;
   const fl = sheetState.draft;
   return `
-  <div class="sheethead"><div class="wrap"><button class="linkbtn" data-close>Schließen</button><h2>Grundstücke</h2>${canW("einstellungen") ? `<button class="linkbtn" form="setForm" type="submit">Sichern</button>` : NOEDIT}</div></div>
+  <div class="sheethead"><div class="wrap"><button class="linkbtn" data-close>Schließen</button><h2>Grundstücke</h2>${canDo("einstellungen", "aendern") ? `<button class="linkbtn" form="setForm" type="submit">Sichern</button>` : NOEDIT}</div></div>
   <div class="wrap body">
-    ${canW("einstellungen") ? "" : `<div class="note"><span>Grundstücke und Name kann nur ändern, wer Schreibrecht für Einstellungen hat.</span></div>`}
-    <form id="setForm" class="form" ${canW("einstellungen") ? "" : "inert"}>
+    ${canDo("einstellungen", "aendern") ? "" : `<div class="note"><span>Grundstücke und Name kann nur ändern, wer bei Einstellungen „Ändern“ darf.</span></div>`}
+    <form id="setForm" class="form" ${canDo("einstellungen", "aendern") ? "" : "inert"}>
       <div class="field full"><label for="s_name">Name des Obstgartens</label><input id="s_name" value="${esc(sheetState.name)}" placeholder="z. B. Streuobstwiese am Hang"></div>
       ${fl.map((f,i) => { const n = trees.filter(t => t.flaeche === f.id).length; return `
       <div class="card full">
@@ -1591,21 +1593,22 @@ function render(){
   const v = $("#view");
   const keepScroll = $("#planscroll") ? [$("#planscroll").scrollLeft, $("#planscroll").scrollTop] : null;
   const examples = trees.some(t => t.beispiel) || batches.some(b => b.beispiel) || casks.some(c => c.beispiel);
-  const banner = (loaded && db && tab !== "verwaltung" && P.lvl(TAB_BEREICH[tab]) < 2 ? `<div class="note"><span>Du hast in diesem Bereich nur <b>Lesezugriff</b>.</span></div>` : "") + (examples && !placing ? `<div class="note"><span>Du siehst <b>Beispieldaten</b>. Lege deine eigenen an und lösche die Beispiele unter ⚙︎.</span></div>` : "");
+  const banner = (loaded && db && tab !== "verwaltung" && !anyWrite(TAB_BEREICH[tab]) ? `<div class="note"><span>Du hast in diesem Bereich nur <b>Lesezugriff</b>.</span></div>` : "") + (examples && !placing ? `<div class="note"><span>Du siehst <b>Beispieldaten</b>. Lege deine eigenen an und lösche die Beispiele unter ⚙︎.</span></div>` : "");
   // Verwaltung: aufgeklappte Personen und Eingaben beim Neuzeichnen behalten
+  const vkey = x => x.id || ((x.closest("[data-oguser]")||{}).dataset||{}).oguser + "|" + (x.dataset.ogr || (x.hasAttribute("data-ogrole") ? "role" : "")) + "|" + (x.dataset.oga || "");
   const keepV = !window.OG_FRESH && tab === "verwaltung" && v.querySelector(".vstack") ? {
     open: [...v.querySelectorAll("details")].map(x => x.open),
-    vals: [...v.querySelectorAll("input,select")].map(x => [x.id || ((x.closest("[data-oguser]")||{}).dataset||{}).oguser + "|" + (x.dataset.ogr || (x.hasAttribute("data-ogrole") ? "role" : "")), x.value]),
+    vals: [...v.querySelectorAll("input,select")].map(x => [vkey(x), x.type === "checkbox" ? x.checked : x.value]),
     y: window.scrollY } : null;
   v.innerHTML = banner + ({plan:viewPlan, baeume:viewBaeume, schnitt:viewSchnitt, ernte:viewErtragTab, wein:viewWein, verwaltung:viewVerwaltung}[tab] || viewPlan)();
   if(keepV){
     v.querySelectorAll("details").forEach((x, i) => { if(keepV.open[i]) x.open = true; });
-    const m = new Map(keepV.vals); v.querySelectorAll("input,select").forEach(x => { const k = x.id || ((x.closest("[data-oguser]")||{}).dataset||{}).oguser + "|" + (x.dataset.ogr || (x.hasAttribute("data-ogrole") ? "role" : "")); if(m.has(k) && x.type !== "submit") x.value = m.get(k); });
+    const m = new Map(keepV.vals); v.querySelectorAll("input,select").forEach(x => { const k = vkey(x); if(m.has(k) && x.type !== "submit"){ if(x.type === "checkbox") x.checked = m.get(k); else x.value = m.get(k); } });
     window.scrollTo(0, keepV.y);
   }
   window.OG_FRESH = false;
   if(keepScroll && $("#planscroll")){ $("#planscroll").scrollLeft = keepScroll[0]; $("#planscroll").scrollTop = keepScroll[1]; }
-  const canAdd = tab !== "verwaltung" && canW(ADD_BEREICH[tab]);
+  const canAdd = tab !== "verwaltung" && canDo(ADD_BEREICH[tab], "anlegen");
   $("#fab").hidden = !!placing || (tab==="ernte" && ertragSeg==="statistik") || !canAdd;
   $("#fab").setAttribute("aria-label", tab==="ernte" ? "Eintrag hinzufügen" : tab==="wein" ? "Gärbehälter hinzufügen" : "Baum hinzufügen");
   $("#btnAddTop").textContent = tab==="ernte" ? "+ Eintrag" : tab==="wein" ? "+ Behälter" : "+ Baum";
@@ -1684,7 +1687,7 @@ document.addEventListener("click", async e => {
     const tol = 1.5;
     const f = plotLayout().find(f => p.x >= f.ox - tol && p.x <= f.ox + f.breite + tol && p.y >= -tol && p.y <= f.laenge + tol);
     if(!f){ toast("Bitte innerhalb eines Grundstücks tippen."); return; }
-    if(P.grund(f.id) < 2){ toast(`Für ${f.name} hast du kein Schreibrecht.`); return; }
+    if(!P.grund(f.id, placing.id ? "aendern" : "anlegen")){ toast(`Auf ${f.name} darfst du das nicht.`); return; }
     placing.flaeche = f.id;
     placing.x = Math.round(Math.min(f.breite, Math.max(0, p.x - f.ox))*10)/10;
     const row = rowOf(f, Math.min(f.laenge, Math.max(0, p.y)));
@@ -1855,6 +1858,7 @@ document.addEventListener("submit", async e => {
   if(e.target.id === "yieldForm"){
     const t = trees.find(x => x.id === sheetState.id); if(!t) return;
     const y = String(parseInt($("#yYear").value)); const v = parseFloat(String($("#yKg").value).replace(",", "."));
+    if((t.ertrag||{})[y] != null && !canDo("ertrag", "aendern", t.flaeche)){ toast(`Für ${y} ist schon ein Ertrag eingetragen – Ändern ist für dich nicht freigegeben.`); return; }
     if((t.ertrag||{})[y] != null && !P.mine(((t.ertragMeta||{})[y]||{}).by || t._creator)){ toast(`Ertrag ${y} hat jemand anderes eingetragen – nur diese Person oder die Verwaltung kann ihn ändern.`); return; }
     if(!(y > 1900) || !(v >= 0)){ toast("Bitte Jahr und Menge in kg angeben."); return; }
     $("#yKg").value = "";
