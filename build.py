@@ -1,6 +1,6 @@
 """Baut index.html (Web-Version) aus der App-Datei obstgarten.html.
 Aufruf: python3 build.py src/obstgarten.html"""
-import sys, re, pathlib
+import sys, re, pathlib, hashlib
 src = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else "src/obstgarten.html").read_text()
 title_m = re.search(r"<title>.*?</title>\s*", src)
 src = src.replace('<meta name="claude:viewport-fit-sides" content="cover">\n', '')
@@ -45,8 +45,10 @@ head = f"""<!doctype html>
 gate = """<div id="gate" hidden></div>
 <template id="gateLogo"><svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#2f6b3a"/><path d="M32 52V32" stroke="#f3efe2" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="24" r="14" fill="#7fc489"/><circle cx="26" cy="22" r="3.5" fill="#c0353a"/><circle cx="37" cy="27" r="3.5" fill="#c0353a"/><circle cx="35" cy="17" r="3" fill="#c0353a"/></svg></template>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="host.js"></script>
+<script src="host.js?v=__HOSTV__"></script>
 """
+# Versionsnummer gegen veraltete Zwischenspeicher (ändert sich mit jedem Stand von host.js)
+gate = gate.replace("__HOSTV__", hashlib.sha1(pathlib.Path("host.js").read_bytes()).hexdigest()[:8])
 # Gate + Host-Skripte vor das App-Skript setzen
 i = src.index("<script>")
 out = head + src[:i] + gate + src[i:] + "\n</body>\n</html>\n"
