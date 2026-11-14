@@ -119,13 +119,20 @@ const TEMPLATES = {
   erfassen:   {bereiche:{plan:"read",pflege:"read",ertrag:"write",wein:"write",einstellungen:"read"},    grundstuecke:{"*":"write"}},
   lesen:      {bereiche:{plan:"read",pflege:"read",ertrag:"read",wein:"read",einstellungen:"read"},      grundstuecke:{"*":"read"}}
 };
-// Wert je Bereich/Grundstück: {sehen,anlegen,aendern,loeschen} oder (Vorlage) "none" | "read" | "write"
+// Wert je Bereich/Grundstück: {sehen,anlegen,aendern,aendern_alle,loeschen,loeschen_alle} oder (Vorlage) "none" | "read" | "write"
+// aendern/loeschen = nur eigene Einträge, *_alle = auch Einträge anderer
+const ALLE_KEYS = ["sehen","anlegen","aendern","aendern_alle","loeschen","loeschen_alle"];
 function act(v, a){
-  if(typeof v === "string") return v === "write" || (v === "read" && a === "sehen");
-  if(v && typeof v === "object") return !!v[a] || (a === "sehen" && Object.values(v).some(Boolean));
+  if(typeof v === "string") return (v === "write" && !a.endsWith("_alle")) || (v === "read" && a === "sehen");
+  if(v && typeof v === "object") return !!v[a] || (a === "aendern" && !!v.aendern_alle) || (a === "loeschen" && !!v.loeschen_alle) || (a === "sehen" && Object.values(v).some(Boolean));
   return false;
 }
-const normRecht = (v, nurSA) => { const o = {}; AKTIONEN.forEach(([a]) => o[a] = act(v, a) && !(nurSA && (a === "anlegen" || a === "loeschen"))); if(o.anlegen || o.aendern || o.loeschen) o.sehen = true; return o; };
+const normRecht = (v, nurSA) => {
+  const o = {}; ALLE_KEYS.forEach(a => o[a] = act(v, a) && !(nurSA && a !== "sehen" && a !== "aendern"));
+  if(o.anlegen || o.aendern || o.loeschen) o.sehen = true; return o;
+};
+const SCOPE = [["none","–"],["eigene","eigene"],["alle","alle"]];
+const scopeOf = (v, a) => act(v, a + "_alle") ? "alle" : act(v, a) ? "eigene" : "none";
 const rechteOf = m => !m ? null : m.role === "owner" ? TEMPLATES.owner : (m.rechte || TEMPLATES[m.role] || TEMPLATES.lesen);
 const grundOf = (r, f) => { const g = (r && r.grundstuecke) || {}; return g[f] !== undefined ? g[f] : g["*"]; };
 window.OG_PERM = {
@@ -166,7 +173,7 @@ window.claude = {use: async name => { await ready.promise; return name === "db" 
 const testPill = m => m.test ? ` <span class="pill">Test</span>` : "";
 const rolePill = m => `<span class="pill ${m.role === "owner" ? "ok" : m.role === "lesen" ? "" : "soon"}">${ROLLEN[m.role] ? ROLLEN[m.role].label : m.role}${m.role !== "owner" && m.rechte ? " · angepasst" : ""}</span>`;
 function flaechen(){ try{ return (window.OG_APP && OG_APP.flaechen && OG_APP.flaechen()) || []; }catch(_){ return []; } }
-const MATRIX_CSS = `<style>.ogtab{width:100%;border-collapse:collapse;font-size:.9rem}.ogtab th,.ogtab td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:center}.ogtab th:first-child,.ogtab td:first-child{text-align:left}.ogtab thead th{font-size:.72rem;color:var(--muted);font-weight:600}.ogtab tr.grp td{font-weight:700;font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding-top:12px}.ogtab input{width:20px;height:20px;accent-color:var(--accent)}.ogtab .na{color:var(--muted)}</style>`;
+const MATRIX_CSS = `<style>.ogtab{width:100%;border-collapse:collapse;font-size:.9rem}.ogtab th,.ogtab td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:center}.ogtab th:first-child,.ogtab td:first-child{text-align:left}.ogtab thead th{font-size:.72rem;color:var(--muted);font-weight:600}.ogtab tr.grp td{font-weight:700;font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding-top:12px}.ogtab input{width:20px;height:20px;accent-color:var(--accent)}.ogtab .na{color:var(--muted)}.ogtab select.ogscope{font-size:.8rem;padding:3px 2px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);max-width:72px}</style>`;
 function rowsOf(r){
   return [
     ["grp", "Seiten"],
@@ -180,15 +187,18 @@ function tableHTML(r, esc, readonly){
   return `${MATRIX_CSS}<table class="ogtab"><thead><tr><th></th>${AKTIONEN.map(([, l]) => `<th>${l}</th>`).join("")}</tr></thead><tbody>
     ${rowsOf(r).map(row => row[0] === "grp" ? `<tr class="grp"><td colspan="5">${row[1]}</td></tr>`
       : `<tr><td>${esc(row[1])}</td>${AKTIONEN.map(([a, al]) => row[3] && (a === "anlegen" || a === "loeschen") ? `<td class="na">–</td>`
-        : `<td><input type="checkbox" data-ogr="${esc(row[0])}" data-oga="${a}" aria-label="${esc(row[1])}: ${al}" ${act(row[2], a) ? "checked" : ""} ${readonly ? "disabled" : ""}></td>`).join("")}</tr>`).join("")}
-  </tbody></table>`;
+        : row[0].startsWith("b:") && !row[3] && (a === "aendern" || a === "loeschen")
+          ? `<td><select class="ogscope" data-ogr="${esc(row[0])}" data-oga="${a}" aria-label="${esc(row[1])}: ${al}" ${readonly ? "disabled" : ""}>${SCOPE.map(([v, l]) => `<option value="${v}" ${scopeOf(row[2], a) === v ? "selected" : ""}>${l}</option>`).join("")}</select></td>`
+          : `<td><input type="checkbox" data-ogr="${esc(row[0])}" data-oga="${a}" aria-label="${esc(row[1])}: ${al}" ${act(row[2], a) ? "checked" : ""} ${readonly ? "disabled" : ""}></td>`).join("")}</tr>`).join("")}
+  </tbody></table>
+  <p class="hint" style="margin:6px 0 0;font-size:.8rem">Ändern/Löschen: <b>eigene</b> = nur selbst Eingetragenes, <b>alle</b> = auch Einträge anderer.</p>`;
 }
 function matrixHTML(m, esc){
   const uid = esc(m.user_id);
   return `<form class="form ogrights" data-oguser="${uid}" style="border-top:1px solid var(--line);padding-top:10px;margin-top:6px">
     <div class="field full"><label>Rolle (Vorlage – setzt die Häkchen)</label><select data-ogrole>${["bearbeiten","erfassen","lesen"].map(k => `<option value="${k}" ${k === m.role ? "selected" : ""}>${ROLLEN[k].label} – ${ROLLEN[k].text}</option>`).join("")}</select></div>
     <div class="full" style="overflow-x:auto">${tableHTML(rechteOf(m), esc, false)}</div>
-    <p class="hint full" style="margin:0">Ändern und Löschen gelten nur für Einträge, die die Person selbst angelegt hat. Bei Einstellungen gibt es nur Sehen und Ändern. Für Bäume, Pflege und Ertrag je Baum braucht es das Häkchen bei der Seite <b>und</b> beim Grundstück.</p>
+    <p class="hint full" style="margin:0">Die Rollen-Vorlagen erlauben Ändern und Löschen nur für eigene Einträge; „alle“ stellst du hier einzeln ein. Bei Einstellungen gibt es nur Sehen und Ändern. Für Bäume, Pflege und Ertrag je Baum braucht es das Häkchen bei der Seite <b>und</b> beim Grundstück.</p>
     ${m.test ? `<div class="tip full" style="text-align:left">Testperson – Anmeldung im privaten Fenster mit <b>${esc(m.test_login || "")}</b> und dem Passwort, das du beim Anlegen vergeben hast.</div>` : ""}
     <div class="full row" style="gap:8px;flex-wrap:wrap"><button class="btn primary small" type="submit">Rechte speichern</button><button class="btn small" type="button" data-ogreset="${uid}">Auf Vorlage zurücksetzen</button><button class="btn small" type="button" data-ogpreview="${uid}">Ansicht als ${esc(m.name || "Person")}</button><span class="spacer"></span>${m.test ? `<button class="btn small danger" data-ogdeltest="${uid}" type="button">Testperson löschen</button>` : `<button class="btn small danger" data-ogremove="${uid}" type="button">Person entfernen</button>`}</div>
   </form>`;
@@ -228,7 +238,7 @@ window.OG_HOST = {
         return `<div class="who" style="padding:8px 0;border-bottom:1px solid var(--line)">${head}<span class="hint">darf alles</span></div>`;
       }).join("")}</div>
       <details><summary class="hint" style="cursor:pointer">Was bedeuten die Rollen?</summary><dl class="kv">${Object.values(ROLLEN).map(r => `<dt>${r.label}</dt><dd>${r.text}</dd>`).join("")}</dl>
-        <p class="hint" style="margin:0">Die Rolle ist eine Vorlage für die Häkchen. Danach kannst du für jede Person pro Seite und Grundstück anhaken, was erlaubt ist. Ändern und Löschen gelten nur für eigene Einträge; die Verwaltung darf alles.</p></details>
+        <p class="hint" style="margin:0">Die Rolle ist eine Vorlage für die Häkchen. Danach kannst du für jede Person pro Seite und Grundstück anhaken, was erlaubt ist. Ändern und Löschen gelten in den Vorlagen nur für eigene Einträge; pro Seite lässt sich „alle“ einstellen. Die Verwaltung darf alles.</p></details>
     </div>
     <div class="card"><span class="eyebrow">Neue Person</span>
       <div class="ogseg" role="tablist" style="width:100%;box-sizing:border-box;display:flex;gap:4px;background:var(--line);border-radius:10px;padding:3px">
@@ -284,21 +294,25 @@ window.OG_HOST = {
 document.addEventListener("change", e => {
   if(!e.target.matches || !e.target.matches("[data-ogrole]")) return;
   const t = TEMPLATES[e.target.value], f = e.target.closest("form");
-  f.querySelectorAll("[data-ogr]").forEach(c => { const [kind, key] = c.dataset.ogr.split(/:(.*)/s); c.checked = act(kind === "b" ? t.bereiche[key] : grundOf(t, key), c.dataset.oga); });
+  f.querySelectorAll("[data-ogr]").forEach(c => { const [kind, key] = c.dataset.ogr.split(/:(.*)/s); const v = kind === "b" ? t.bereiche[key] : grundOf(t, key); if(c.tagName === "SELECT") c.value = scopeOf(v, c.dataset.oga); else c.checked = act(v, c.dataset.oga); });
 }, true);
 // Häkchen-Logik: ohne „Sehen“ keine anderen Aktionen, mit Aktion automatisch „Sehen“
 document.addEventListener("change", e => {
-  const c = e.target; if(!c.matches || !c.matches("input[data-oga]")) return;
-  const row = [...c.closest("tr").querySelectorAll("input[data-oga]")];
-  if(c.dataset.oga === "sehen" && !c.checked) row.forEach(x => x.checked = false);
-  if(c.dataset.oga !== "sehen" && c.checked){ const s = row.find(x => x.dataset.oga === "sehen"); if(s) s.checked = true; }
+  const c = e.target; if(!c.matches || !c.matches("[data-oga]")) return;
+  const row = [...c.closest("tr").querySelectorAll("[data-oga]")];
+  const on = x => x.tagName === "SELECT" ? x.value !== "none" : x.checked;
+  if(c.dataset.oga === "sehen" && !c.checked) row.forEach(x => { if(x.tagName === "SELECT") x.value = "none"; else x.checked = false; });
+  if(c.dataset.oga !== "sehen" && on(c)){ const s = row.find(x => x.dataset.oga === "sehen"); if(s) s.checked = true; }
 }, true);
 // Rolle + Häkchen aus einem Formular lesen; rechte = null, wenn genau die Vorlage
 function rechteFromForm(f){
   const role = f.querySelector("[data-ogrole]").value, t = TEMPLATES[role];
   const r = {bereiche:{}, grundstuecke:{}};
-  f.querySelectorAll("input[data-ogr]").forEach(c => { const [kind, key] = c.dataset.ogr.split(/:(.*)/s); const box = kind === "b" ? r.bereiche : r.grundstuecke; (box[key] ||= {sehen:false, anlegen:false, aendern:false, loeschen:false})[c.dataset.oga] = c.checked; });
-  const eq = (x, y, nurSA) => { const a = normRecht(x, nurSA), b = normRecht(y, nurSA); return AKTIONEN.every(([k]) => a[k] === b[k]); };
+  f.querySelectorAll("[data-ogr][data-oga]").forEach(c => {
+    const [kind, key] = c.dataset.ogr.split(/:(.*)/s), box = kind === "b" ? r.bereiche : r.grundstuecke, o = (box[key] ||= {sehen:false, anlegen:false, aendern:false, aendern_alle:false, loeschen:false, loeschen_alle:false}), a = c.dataset.oga;
+    if(c.tagName === "SELECT"){ o[a] = c.value !== "none"; o[a + "_alle"] = c.value === "alle"; } else o[a] = c.checked;
+  });
+  const eq = (x, y, nurSA) => { const a = normRecht(x, nurSA), b = normRecht(y, nurSA); return ALLE_KEYS.every(k => a[k] === b[k]); };
   const same = BEREICHE.every(([k]) => eq(r.bereiche[k], t.bereiche[k], !!NUR_SEHEN_AENDERN[k])) && Object.entries(r.grundstuecke).every(([k, v]) => eq(v, grundOf(t, k), false));
   return {role, rechte: same ? null : r};
 }
