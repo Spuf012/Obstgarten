@@ -589,7 +589,7 @@ const P = {
   can: (b, a) => PERM() ? PERM().can(b, a) : true,
   grund: (f, a) => PERM() ? PERM().grund(f, a) : true,
   owner: () => PERM() ? PERM().owner : true,
-  mine: by => !PERM() || PERM().owner || (!!by && by === meId)
+  mine: by => !PERM() || PERM().owner || (!!by && by === (PERM().uid || meId))
 };
 // darf Aktion a ("sehen" | "anlegen" | "aendern" | "loeschen") im Bereich b (und auf Grundstück f)
 const canDo = (b, a, f) => P.can(b, a) && (f === undefined || P.grund(f, a));
@@ -1964,7 +1964,7 @@ document.addEventListener("keydown", e => {
 let _rz; window.addEventListener("resize", () => { clearTimeout(_rz); _rz = setTimeout(() => { if(tab === "plan") render(); }, 150); });
 
 /* ---------- Daten ---------- */
-window.OG_APP = {flaechen: () => garden.flaechen, render: () => render(), refreshPeople: () => { _pp = null; refreshPeople(); }, toast: m => toast(m), closeSheet: () => { sheetState = null; render(); }};
+window.OG_APP = {goto: t => { tab = t; render(); }, flaechen: () => garden.flaechen, render: () => render(), refreshPeople: () => { _pp = null; refreshPeople(); }, toast: m => toast(m), closeSheet: () => { sheetState = null; render(); }};
 render();
 (async () => {
   const c = window.claude;

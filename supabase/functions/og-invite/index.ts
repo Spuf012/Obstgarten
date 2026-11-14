@@ -1,6 +1,8 @@
-// Obstgarten – Person per E-Mail einladen (nur Verwaltung).
-// Schickt eine Supabase-Einladung und trägt die Person mit der gewählten Rolle in og_members ein.
-// Ist die E-Mail schon registriert, wird die Person direkt freigeschaltet.
+// Obstgarten – Personen verwalten (nur Verwaltung).
+// action "invite" (Standard): Supabase-Einladung per E-Mail, Eintrag in og_members mit Rolle;
+//   ist die E-Mail schon registriert, wird die Person direkt freigeschaltet.
+// action "test": Testperson ohne echte E-Mail anlegen (Fantasie-Adresse, sofort bestätigt, Passwort von der Verwaltung).
+// action "deletetest": Testperson samt Konto löschen (nur Konten mit Test-Merker).
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const APP_URL = "https://spuf012.github.io/Obstgarten/";
@@ -29,6 +31,34 @@ Deno.serve(async (req) => {
 
   let body: any;
   try { body = await req.json(); } catch { return json({ error: "Ungültige Anfrage." }, 400); }
+  const action = String(body.action || "invite");
+
+  if (action === "test") {
+    const name = String(body.name || "").trim().slice(0, 40);
+    const password = String(body.password || "");
+    const role = ROLES.includes(body.role) ? body.role : "lesen";
+    if (!name) return json({ error: "Bitte einen Namen angeben." }, 400);
+    if (password.length < 6) return json({ error: "Das Passwort braucht mindestens 6 Zeichen." }, 400);
+    const slug = name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "").slice(0, 16) || "person";
+    const email = `test-${slug}-${crypto.randomUUID().slice(0, 4)}@example.com`;
+    const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name, og_test: true } });
+    if (error || !data.user) return json({ error: "Anlegen fehlgeschlagen: " + (error?.message || "unbekannt") }, 400);
+    const { error: e2 } = await admin.from("og_members").insert({ user_id: data.user.id, name: name + " (Test)", role, test: true, test_login: email });
+    if (e2) { await admin.auth.admin.deleteUser(data.user.id); return json({ error: "Anlegen fehlgeschlagen: " + e2.message }, 400); }
+    return json({ status: "test", email });
+  }
+
+  if (action === "deletetest") {
+    const uid = String(body.user_id || "");
+    const { data: m } = await admin.from("og_members").select("test").eq("user_id", uid).maybeSingle();
+    const { data: u } = await admin.auth.admin.getUserById(uid);
+    if (!m?.test || !u?.user?.user_metadata?.og_test) return json({ error: "Nur Testpersonen können so gelöscht werden." }, 400);
+    const { error } = await admin.auth.admin.deleteUser(uid);
+    if (error) return json({ error: "Löschen fehlgeschlagen: " + error.message }, 400);
+    await admin.from("og_members").delete().eq("user_id", uid);
+    return json({ status: "deleted" });
+  }
+
   const email = String(body.email || "").trim().toLowerCase();
   const name = String(body.name || "").trim().slice(0, 60) || email.split("@")[0];
   const role = ROLES.includes(body.role) ? body.role : "lesen";

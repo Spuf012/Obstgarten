@@ -18,8 +18,19 @@ const randomId = () => { const c = "abcdefghijklmnopqrstuvwxyz0123456789"; let s
 const withCreator = (d, by) => ({...(d || {}), _creator: by || null});
 const mapErr = e => { const code = e && (e.code === "42501" || /row-level security|permission/i.test(e.message||"")) ? "invalid_argument" : "unavailable"; return {code, message: (e && e.message) || "Fehler"}; };
 
+// „Ansicht als …“ (nur Verwaltung): zeigt die App mit den Rechten einer Person/Rolle, speichert nichts
+let preview = null;   // {label, member:{user_id, role, rechte}}
+const effMember = () => preview ? preview.member : member;
+function previewSees(coll, d){
+  if(!preview) return true;
+  if(coll === "trees") return OG_PERM.grund(d && d.flaeche, "sehen");
+  if(coll === "verarbeitung") return OG_PERM.can("ertrag", "sehen");
+  if(coll === "keller") return OG_PERM.can("wein", "sehen");
+  return true;
+}
+const PREVIEW_ERR = {code: "invalid_argument", message: "Vorschau – es wird nichts gespeichert"};
 function snapshotFor(coll, opts){
-  let rows = [...(cache[coll] || new Map()).entries()].map(([id, v]) => ({id, data: v.data, at: v.updated_at}));
+  let rows = [...(cache[coll] || new Map()).entries()].map(([id, v]) => ({id, data: v.data, at: v.updated_at})).filter(r => previewSees(coll, r.data));
   if(opts && opts.order){ const f = opts.order.field, dir = opts.order.dir === "desc" ? -1 : 1; rows.sort((a,b) => String(a.data[f]||a.at).localeCompare(String(b.data[f]||b.at)) * dir); }
   if(opts && opts.limit) rows = rows.slice(0, opts.limit);
   return {docs: rows.map(r => ({id: r.id, data: () => r.data})), metadata: {fromCache:false}};
@@ -60,6 +71,7 @@ function docRef(coll, id){
   return {
     id,
     async set(data){
+      if(preview) throw PREVIEW_ERR;
       const {_creator, ...clean} = data || {};
       const {data: rows, error} = await sb.from("og_docs").upsert({collection: coll, id, data: clean}, {onConflict:"collection,id"}).select("data,updated_at,created_by");
       if(error) throw mapErr(error);
@@ -68,12 +80,13 @@ function docRef(coll, id){
       notify(coll);
     },
     async delete(){
+      if(preview) throw PREVIEW_ERR;
       const {error} = await sb.from("og_docs").delete().eq("collection", coll).eq("id", id);
       if(error) throw mapErr(error);
       if(cache[coll]) cache[coll].delete(id); notify(coll);
     },
     onSnapshot(cb, err){
-      const fn = () => { const v = cache[coll] && cache[coll].get(id); cb({exists: !!v, id, data: () => v ? v.data : undefined}); };
+      const fn = () => { const v = cache[coll] && cache[coll].get(id); const ok = !!v && previewSees(coll, v.data); cb({exists: ok, id, data: () => ok ? v.data : undefined}); };
       (listeners[coll] ||= new Set()).add(fn);
       load(coll).then(fn, e => err && err(e));
       return () => listeners[coll].delete(fn);
@@ -116,16 +129,19 @@ const normRecht = (v, nurSA) => { const o = {}; AKTIONEN.forEach(([a]) => o[a] =
 const rechteOf = m => !m ? null : m.role === "owner" ? TEMPLATES.owner : (m.rechte || TEMPLATES[m.role] || TEMPLATES.lesen);
 const grundOf = (r, f) => { const g = (r && r.grundstuecke) || {}; return g[f] !== undefined ? g[f] : g["*"]; };
 window.OG_PERM = {
-  get owner(){ return !!member && member.role === "owner"; },
-  can(b, a){ const r = rechteOf(member); return !!r && act(r.bereiche[b], a); },
-  grund(f, a){ return act(grundOf(rechteOf(member), f || "*"), a); },
-  anyWrite(){ const r = rechteOf(member); return !!r && Object.values(r.bereiche).some(v => ["anlegen","aendern","loeschen"].some(a => act(v, a))); }
+  get owner(){ return !preview && !!member && member.role === "owner"; },
+  get uid(){ return preview ? preview.member.user_id : (session ? session.user.id : null); },
+  get preview(){ return preview ? preview.label : null; },
+  can(b, a){ const r = rechteOf(effMember()); return !!r && act(r.bereiche[b], a); },
+  grund(f, a){ return act(grundOf(rechteOf(effMember()), f || "*"), a); },
+  anyWrite(){ const r = rechteOf(effMember()); return !!r && Object.values(r.bereiche).some(v => ["anlegen","aendern","loeschen"].some(a => act(v, a))); }
 };
 let myRightsKey = null;
 async function loadMembers(){
-  const {data} = await sb.from("og_members").select("user_id,name,role,rechte");
+  const {data} = await sb.from("og_members").select("user_id,name,role,rechte,test,test_login");
   members = Object.fromEntries((data||[]).map(m => [m.user_id, m]));
   if(session) member = members[session.user.id] || member;
+  if(preview && preview.member.user_id && members[preview.member.user_id]) preview.member = members[preview.member.user_id];
   // eigene Rechte geändert → neu laden, damit sichtbare Daten stimmen
   const key = member ? member.role + JSON.stringify(member.rechte) : "";
   if(myRightsKey !== null && key !== myRightsKey && ready.done){ location.reload(); return; }
@@ -147,6 +163,7 @@ const userApi = {
 window.claude = {use: async name => { await ready.promise; return name === "db" ? dbApi : name === "user" ? userApi : null; }};
 
 /* ---------- Personen-Verwaltung in den Einstellungen ---------- */
+const testPill = m => m.test ? ` <span class="pill">Test</span>` : "";
 const rolePill = m => `<span class="pill ${m.role === "owner" ? "ok" : m.role === "lesen" ? "" : "soon"}">${ROLLEN[m.role] ? ROLLEN[m.role].label : m.role}${m.role !== "owner" && m.rechte ? " · angepasst" : ""}</span>`;
 function flaechen(){ try{ return (window.OG_APP && OG_APP.flaechen && OG_APP.flaechen()) || []; }catch(_){ return []; } }
 const MATRIX_CSS = `<style>.ogtab{width:100%;border-collapse:collapse;font-size:.9rem}.ogtab th,.ogtab td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:center}.ogtab th:first-child,.ogtab td:first-child{text-align:left}.ogtab thead th{font-size:.72rem;color:var(--muted);font-weight:600}.ogtab tr.grp td{font-weight:700;font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding-top:12px}.ogtab input{width:20px;height:20px;accent-color:var(--accent)}.ogtab .na{color:var(--muted)}</style>`;
@@ -172,22 +189,36 @@ function matrixHTML(m, esc){
     <div class="field full"><label>Rolle (Vorlage – setzt die Häkchen)</label><select data-ogrole>${["bearbeiten","erfassen","lesen"].map(k => `<option value="${k}" ${k === m.role ? "selected" : ""}>${ROLLEN[k].label} – ${ROLLEN[k].text}</option>`).join("")}</select></div>
     <div class="full" style="overflow-x:auto">${tableHTML(rechteOf(m), esc, false)}</div>
     <p class="hint full" style="margin:0">Ändern und Löschen gelten nur für Einträge, die die Person selbst angelegt hat. Bei Einstellungen gibt es nur Sehen und Ändern. Für Bäume, Pflege und Ertrag je Baum braucht es das Häkchen bei der Seite <b>und</b> beim Grundstück.</p>
-    <div class="full row" style="gap:8px"><button class="btn primary small" type="submit">Rechte speichern</button><button class="btn small" type="button" data-ogreset="${uid}">Auf Vorlage zurücksetzen</button><span class="spacer"></span><button class="btn small danger" data-ogremove="${uid}" type="button">Person entfernen</button></div>
+    ${m.test ? `<div class="tip full" style="text-align:left">Testperson – Anmeldung im privaten Fenster mit <b>${esc(m.test_login || "")}</b> und dem Passwort, das du beim Anlegen vergeben hast.</div>` : ""}
+    <div class="full row" style="gap:8px;flex-wrap:wrap"><button class="btn primary small" type="submit">Rechte speichern</button><button class="btn small" type="button" data-ogreset="${uid}">Auf Vorlage zurücksetzen</button><button class="btn small" type="button" data-ogpreview="${uid}">Ansicht als ${esc(m.name || "Person")}</button><span class="spacer"></span>${m.test ? `<button class="btn small danger" data-ogdeltest="${uid}" type="button">Testperson löschen</button>` : `<button class="btn small danger" data-ogremove="${uid}" type="button">Person entfernen</button>`}</div>
   </form>`;
 }
 function myRightsHTML(esc){
-  const r = rechteOf(member); if(!r || member.role === "owner") return "";
-  return `<div style="text-align:left;margin-top:6px"><b>Deine Rechte</b>${tableHTML(r, esc, true)}<p class="hint" style="margin:4px 0 0">Ändern und löschen kannst du nur, was du selbst eingetragen hast.</p></div>`;
+  const em = effMember(), r = rechteOf(em); if(!r || em.role === "owner") return "";
+  return `<div style="text-align:left;margin-top:6px"><b>${preview ? "Rechte in der Vorschau" : "Deine Rechte"}</b>${tableHTML(r, esc, true)}<p class="hint" style="margin:4px 0 0">Ändern und löschen kannst du nur, was du selbst eingetragen hast.</p></div>`;
 }
+let lastTest = null;
+function setPreview(p){
+  preview = p;
+  let bar = document.getElementById("ogPreviewBar");
+  if(p){
+    if(!bar){ bar = document.createElement("div"); bar.id = "ogPreviewBar"; bar.setAttribute("role", "status"); document.body.appendChild(bar); }
+    bar.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 76px);z-index:60;white-space:nowrap;background:var(--ink);color:var(--surface);border-radius:999px;padding:6px 8px 6px 14px;display:flex;gap:10px;align-items:center;font-size:.85rem;box-shadow:0 4px 14px rgba(0,0,0,.25);max-width:calc(100vw - 24px)";
+    bar.innerHTML = `<span style="overflow:hidden;text-overflow:ellipsis">👁 Ansicht als <b>${p.label.replace(/[<>&"]/g, "")}</b></span><button type="button" id="ogPreviewEnd" style="border:0;border-radius:999px;padding:5px 10px;font-weight:600;background:var(--surface);color:var(--ink)">Beenden</button>`;
+  } else if(bar) bar.remove();
+  Object.keys(listeners).forEach(notify);
+  OG_APP.closeSheet();
+}
+document.addEventListener("click", e => { if(e.target.closest && e.target.closest("#ogPreviewEnd")){ setPreview(null); OG_APP.goto && OG_APP.goto("verwaltung"); OG_APP.toast("Vorschau beendet"); } });
 window.OG_HOST = {
   speicherText: "Die Daten liegen in der Supabase-Datenbank und sind auf jedem Gerät verfügbar, auf dem du dich anmeldest.",
   personenHTML({esc}){
-    const isOwner = member && member.role === "owner";
+    const isOwner = OG_PERM.owner;
     const order = {owner:0, bearbeiten:1, erfassen:2, lesen:3};
     const list = Object.values(members).sort((a,b) => (order[a.role] ?? 9) - (order[b.role] ?? 9) || a.name.localeCompare(b.name));
     return `<div class="card"><span class="eyebrow">Personen &amp; Rechte</span>
       <div class="list" style="border:0">${list.map(m => {
-        const head = `<span style="display:inline-flex;gap:8px;align-items:center;color:var(--ink)"><span class="av av0" style="width:26px;height:26px;background:${colorFor(m.user_id)};color:#fff;border-color:transparent">${esc((m.name||"?").trim()[0]||"?").toUpperCase()}</span>${esc(m.name || "Ohne Namen")}${m.user_id === session.user.id ? " (du)" : ""} ${rolePill(m)}</span>`;
+        const head = `<span style="display:inline-flex;gap:8px;align-items:center;color:var(--ink)"><span class="av av0" style="width:26px;height:26px;background:${colorFor(m.user_id)};color:#fff;border-color:transparent">${esc((m.name||"?").trim()[0]||"?").toUpperCase()}</span>${esc(m.name || "Ohne Namen")}${m.user_id === session.user.id ? " (du)" : ""} ${rolePill(m)}${testPill(m)}</span>`;
         if(isOwner && m.role !== "owner") return `<details class="ogperson" style="padding:6px 0"><summary class="who" style="cursor:pointer;list-style:none;justify-content:space-between">${head}<span class="hint">Rechte ›</span></summary>${matrixHTML(m, esc)}</details>`;
         return `<div class="who" style="padding:6px 0">${head}</div>`;
       }).join("")}</div>
@@ -195,6 +226,16 @@ window.OG_HOST = {
       <details><summary class="hint" style="cursor:pointer">Was bedeuten die Rollen?</summary><dl class="kv">${Object.values(ROLLEN).map(r => `<dt>${r.label}</dt><dd>${r.text}</dd>`).join("")}</dl>
         <p class="hint" style="margin:0">Die Rolle ist eine Vorlage. Die Verwaltung kann danach für jede Person pro Seite und Grundstück anhaken, was erlaubt ist (Sehen, Anlegen, Ändern, Löschen). Ändern und löschen darf jede Person nur ihre eigenen Einträge; die Verwaltung darf alles.</p></details>
       <form class="form" id="ogNameForm"><div class="field"><label for="og_myname">Dein Anzeigename</label><input id="og_myname" value="${esc(member ? member.name : "")}"></div><div class="field" style="justify-content:flex-end"><button class="btn" type="submit">Namen speichern</button></div></form>
+      ${isOwner ? `<div style="border-top:1px solid var(--line);padding-top:12px"><p style="margin:0 0 6px"><b>Ansicht als …</b></p><p class="hint" style="margin:0 0 8px">Zeigt die App so, wie eine Rolle sie sieht. In der Vorschau wird nichts gespeichert.</p>
+        <div class="row" style="gap:8px;flex-wrap:wrap">${["bearbeiten","erfassen","lesen"].map(k => `<button class="btn small" type="button" data-ogpreviewrole="${k}">${ROLLEN[k].label}</button>`).join("")}</div></div>` : ""}
+      ${isOwner ? `<form class="form" id="ogTestForm" style="border-top:1px solid var(--line);padding-top:12px">
+        <p class="full" style="margin:0"><b>Testperson anlegen</b></p>
+        <p class="hint full" style="margin:0">Ohne echte E-Mail-Adresse: Die App vergibt eine Fantasie-Adresse zum Anmelden. Melde dich damit in einem privaten Browserfenster an, um die Rechte wirklich auszuprobieren.</p>
+        ${lastTest ? `<div class="tip full" style="text-align:left">Testperson angelegt. Anmeldung: <b>${esc(lastTest.email)}</b> · Passwort: <b>${esc(lastTest.password)}</b><br><span class="hint">Notier dir die Daten – das Passwort wird nicht noch einmal angezeigt.</span></div>` : ""}
+        <div class="field"><label for="og_tname">Name</label><input id="og_tname" placeholder="z. B. Test Erfassen" required></div>
+        <div class="field"><label for="og_tpw">Passwort</label><input id="og_tpw" type="text" minlength="6" autocomplete="off" required placeholder="mind. 6 Zeichen"></div>
+        <div class="field full"><label for="og_trole">Rolle</label><select id="og_trole">${["lesen","erfassen","bearbeiten"].map(k => `<option value="${k}">${ROLLEN[k].label} – ${ROLLEN[k].text}</option>`).join("")}</select></div>
+        <div class="full"><button class="btn primary" type="submit">Testperson anlegen</button></div></form>` : ""}
       ${isOwner ? `<form class="form" id="ogInviteForm" style="border-top:1px solid var(--line);padding-top:12px">
         <p class="full" style="margin:0"><b>Person einladen</b></p>
         <p class="hint full" style="margin:0">Die Person bekommt eine E-Mail mit einem Link, legt darüber ihr Passwort fest und ist sofort mit der gewählten Rolle freigeschaltet. Hat sie sich schon selbst registriert, wird sie direkt freigeschaltet.</p>
@@ -211,6 +252,15 @@ window.OG_HOST = {
       if(el.dataset.armed !== "1"){ el.dataset.armed = "1"; el.textContent = "Wirklich entfernen?"; return true; }
       const {data, error} = await sb.rpc("og_remove_member", {p_user: d.ogremove});
       window.OG_FRESH = true; OG_APP.toast(error || data !== "ok" ? "Entfernen fehlgeschlagen." : "Person entfernt"); await loadMembers(); OG_APP.closeSheet(); return true;
+    }
+    if(d.ogpreview){ const m = members[d.ogpreview]; if(m){ setPreview({label: m.name || "Person", member: m}); OG_APP.toast(`Ansicht als ${m.name || "Person"}`); } return true; }
+    if(d.ogpreviewrole){ setPreview({label: "Rolle " + ROLLEN[d.ogpreviewrole].label, member: {user_id: "preview-" + d.ogpreviewrole, role: d.ogpreviewrole, rechte: null}}); OG_APP.toast(`Ansicht als Rolle ${ROLLEN[d.ogpreviewrole].label}`); return true; }
+    if(d.ogdeltest){
+      if(el.dataset.armed !== "1"){ el.dataset.armed = "1"; el.textContent = "Wirklich löschen?"; return true; }
+      el.disabled = true;
+      const {error} = await sb.functions.invoke("og-invite", {body: {action: "deletetest", user_id: d.ogdeltest}});
+      let msg = "Testperson gelöscht"; if(error){ msg = "Löschen fehlgeschlagen."; try{ msg = (await error.context.json()).error || msg; }catch(_){} }
+      window.OG_FRESH = true; OG_APP.toast(msg); await loadMembers(); OG_APP.closeSheet(); return true;
     }
     if(d.ogreset){
       const f = el.closest("form"), role = f.querySelector("[data-ogrole]").value;
@@ -244,6 +294,16 @@ document.addEventListener("submit", async e => {
     const {data, error} = await sb.rpc("og_set_member", {p_user: f.dataset.oguser, p_role: role, p_rechte: same ? null : r});
     window.OG_FRESH = true; OG_APP.toast(error || data !== "ok" ? "Speichern fehlgeschlagen." : "Rechte gespeichert"); await loadMembers(); OG_APP.closeSheet(); return;
   }
+  if(e.target.id === "ogTestForm"){
+    e.preventDefault(); e.stopImmediatePropagation();
+    const btn = e.target.querySelector("button[type=submit]"); btn.disabled = true; btn.textContent = "Wird angelegt …";
+    const password = document.getElementById("og_tpw").value;
+    const {data, error} = await sb.functions.invoke("og-invite", {body: {action: "test", name: document.getElementById("og_tname").value, password, role: document.getElementById("og_trole").value}});
+    if(error){ let msg = "Anlegen fehlgeschlagen."; try{ msg = (await error.context.json()).error || msg; }catch(_){} OG_APP.toast(msg); btn.disabled = false; btn.textContent = "Testperson anlegen"; return; }
+    lastTest = {email: data.email, password};
+    window.OG_FRESH = true; OG_APP.toast("Testperson angelegt"); await loadMembers(); OG_APP.closeSheet();
+    return;
+  }
   if(e.target.id === "ogInviteForm"){
     e.preventDefault(); e.stopImmediatePropagation();
     const btn = e.target.querySelector("button[type=submit]"); btn.disabled = true; btn.textContent = "Wird gesendet …";
@@ -267,20 +327,17 @@ document.addEventListener("submit", async e => {
 const gate = document.getElementById("gate");
 function showGate(html){ gate.innerHTML = html; gate.hidden = false; }
 function loginHTML(mode, msg){
-  const reg = mode === "register";
   return `<div class="gatecard">
     <div class="gatelogo">${document.getElementById("gateLogo").innerHTML}</div>
     <h1>Obstgarten</h1>
-    <p class="hint">${reg ? "Neues Konto anlegen. Danach muss dich die Verwaltung in der App freischalten." : "Melde dich mit deiner E-Mail-Adresse an."}</p>
+    <p class="hint">Melde dich mit deiner E-Mail-Adresse an. Einen Zugang bekommst du per Einladung von der Verwaltung.</p>
     ${msg ? `<div class="tip">${msg}</div>` : ""}
-    <form id="loginForm" class="form" data-mode="${mode}">
-      ${reg ? `<div class="field full"><label for="l_name">Dein Name</label><input id="l_name" autocomplete="name" required></div>` : ""}
+    <form id="loginForm" class="form" data-mode="login">
       <div class="field full"><label for="l_mail">E-Mail</label><input id="l_mail" type="email" autocomplete="email" required></div>
-      <div class="field full"><label for="l_pw">Passwort</label><input id="l_pw" type="password" autocomplete="${reg ? "new-password" : "current-password"}" minlength="6" required></div>
-      <div class="full"><button class="btn primary" type="submit" style="width:100%">${reg ? "Registrieren" : "Anmelden"}</button></div>
+      <div class="field full"><label for="l_pw">Passwort</label><input id="l_pw" type="password" autocomplete="current-password" minlength="6" required></div>
+      <div class="full"><button class="btn primary" type="submit" style="width:100%">Anmelden</button></div>
     </form>
-    <button class="linkbtn" id="toggleMode" type="button">${reg ? "Ich habe schon ein Konto" : "Noch kein Konto? Registrieren"}</button>
-    ${reg ? "" : `<button class="linkbtn" id="forgotPw" type="button" style="font-size:.9rem">Passwort vergessen?</button>`}
+    <button class="linkbtn" id="forgotPw" type="button" style="font-size:.9rem">Passwort vergessen?</button>
   </div>`;
 }
 function waitingHTML(){
@@ -288,13 +345,12 @@ function waitingHTML(){
     <div class="gatelogo">${document.getElementById("gateLogo").innerHTML}</div>
     <h1>Fast geschafft</h1>
     <p>Du bist als <b>${session.user.email.replace(/[<>&"]/g, "")}</b> angemeldet, aber noch nicht freigeschaltet.</p>
-    <p class="hint">Bitte die Verwaltung, dich in der App unter ⚙︎ → Personen mit dieser E-Mail-Adresse freizuschalten. Danach diese Seite neu laden.</p>
+    <p class="hint">Bitte die Verwaltung, dich mit dieser E-Mail-Adresse einzuladen. Danach diese Seite neu laden.</p>
     <div class="row" style="justify-content:center;gap:10px"><button class="btn primary" id="recheck" type="button">Erneut prüfen</button><button class="btn" id="logout2" type="button">Abmelden</button></div>
   </div>`;
 }
 gate.addEventListener("click", async e => {
   const b = e.target.closest("button"); if(!b) return;
-  if(b.id === "toggleMode"){ const f = gate.querySelector("#loginForm"); showGate(loginHTML(f.dataset.mode === "register" ? "login" : "register")); }
   if(b.id === "forgotPw"){
     const mail = gate.querySelector("#l_mail").value.trim();
     if(!mail){ showGate(loginHTML("login", "Bitte zuerst deine E-Mail-Adresse eintragen.")); return; }
@@ -310,19 +366,10 @@ gate.addEventListener("submit", async e => {
   const mode = f.dataset.mode;
   const mail = gate.querySelector("#l_mail").value.trim(), pw = gate.querySelector("#l_pw").value;
   const btn = f.querySelector("button[type=submit]"); btn.disabled = true;
-  if(mode === "register"){
-    const name = gate.querySelector("#l_name").value.trim();
-    const {data, error} = await sb.auth.signUp({email: mail, password: pw, options:{data:{name}, emailRedirectTo: location.origin + location.pathname}});
-    btn.disabled = false;
-    if(error){ showGate(loginHTML("register", error.message.includes("registered") ? "Diese E-Mail ist schon registriert. Bitte anmelden." : "Registrierung fehlgeschlagen: " + error.message.replace(/[<>&"]/g, ""))); return; }
-    if(!data.session){ showGate(loginHTML("login", "Fast fertig: Bitte bestätige deine E-Mail-Adresse über den Link in der Mail, die du gerade bekommen hast. Danach hier anmelden.")); return; }
-    session = data.session; await afterLogin();
-  } else {
-    const {data, error} = await sb.auth.signInWithPassword({email: mail, password: pw});
-    btn.disabled = false;
-    if(error){ showGate(loginHTML("login", /confirm/i.test(error.message) ? "Bitte bestätige zuerst deine E-Mail-Adresse über den Link in der Mail." : "Anmeldung fehlgeschlagen. E-Mail oder Passwort stimmen nicht.")); return; }
-    session = data.session; await afterLogin();
-  }
+  const {data, error} = await sb.auth.signInWithPassword({email: mail, password: pw});
+  btn.disabled = false;
+  if(error){ showGate(loginHTML("login", /confirm/i.test(error.message) ? "Bitte bestätige zuerst deine E-Mail-Adresse über den Link in der Mail." : "Anmeldung fehlgeschlagen. E-Mail oder Passwort stimmen nicht.")); return; }
+  session = data.session; await afterLogin();
 });
 function setPasswordHTML(msg){
   return `<div class="gatecard">
