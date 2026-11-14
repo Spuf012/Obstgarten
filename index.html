@@ -1,0 +1,1946 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Obstgarten">
+<meta name="theme-color" content="#edf1ea" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1511" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>Mein Obstgarten</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&display=swap">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+body{margin:0;font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+#gate{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;overflow:auto;padding:max(24px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.gatecard{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:12px;text-align:center}
+.gatecard h1{font-family:var(--display);margin:0;font-size:1.6rem}
+.gatecard p{margin:0}
+.gatecard .form{text-align:left}
+.gatelogo{display:grid;place-items:center}
+.gatelogo svg{width:72px;height:72px}
+</style>
+</head>
+<body>
+<style>
+/* Layout: App-Shell fürs iPhone – sticky Kopfzeile, eine Ansicht pro Tab, feste Tableiste unten, Detail als Vollbild-Sheet */
+:root{
+  --bg:#edf1ea; --surface:#ffffff; --surface-2:#f6f8f4; --ink:#17231b; --muted:#5b6a5f; --line:#d4dcd1;
+  --accent:#2f6b3a; --accent-ink:#ffffff; --grass:#dde8d3; --grid:#c4d3bc; --grid-strong:#a9bda0;
+  --ok:#3a8a45; --soon:#c3870b; --due:#c23b2a; --none:#8a948c; --fallow:#d9dbd6; --fallow-line:#b9bdb5; --picto-bg:#e3ecdd; --picto-white:#ffffff; --soil:#d8c7ae; --warn-bg:#fbf1dc; --cider:#e2ad3c; --cider-trub:#d9b670; --cork:#a9784c; --glass:#eef4f1; --f-red:#c0353a; --f-plum:#6b3f7a; --f-pear:#b9c35a; --f-quince:#e6b422; --f-apricot:#ec8f3a; --cloth:#d24a4a;
+  --display:'Bricolage Grotesque', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --body:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1511; --surface:#18211b; --surface-2:#1d2820; --ink:#e5ede6; --muted:#97a69b; --line:#2b372e;
+  --accent:#7fc489; --accent-ink:#0c1a10; --grass:#172519; --grid:#233628; --grid-strong:#2f4a35;
+  --ok:#6cc27a; --soon:#e4b244; --due:#ef6b57; --none:#7e897f; --fallow:#252a26; --fallow-line:#3a413b; --picto-bg:#1f2d22; --picto-white:#e9eee9; --soil:#4a3d2c; --warn-bg:#2e2716; --cider:#d9a136; --cider-trub:#a88b4f; --cork:#8a6440; --glass:#1c2620; --f-red:#d65459; --f-plum:#9a6aab; --f-pear:#a6b04e; --f-quince:#d6a41e; --f-apricot:#e08a3d; --cloth:#c45050; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0f1511; --surface:#18211b; --surface-2:#1d2820; --ink:#e5ede6; --muted:#97a69b; --line:#2b372e;
+  --accent:#7fc489; --accent-ink:#0c1a10; --grass:#172519; --grid:#233628; --grid-strong:#2f4a35;
+  --ok:#6cc27a; --soon:#e4b244; --due:#ef6b57; --none:#7e897f; --fallow:#252a26; --fallow-line:#3a413b; --picto-bg:#1f2d22; --picto-white:#e9eee9; --soil:#4a3d2c; --warn-bg:#2e2716; --cider:#d9a136; --cider-trub:#a88b4f; --cork:#8a6440; --glass:#1c2620; --f-red:#d65459; --f-plum:#9a6aab; --f-pear:#a6b04e; --f-quince:#d6a41e; --f-apricot:#e08a3d; --cloth:#c45050; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--body);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent;padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;align-items:center;gap:12px;padding-block:10px}
+header.top h1{font-family:var(--display);font-weight:700;font-size:1.45rem;letter-spacing:-.01em;margin:0;flex:1;min-width:0;text-wrap:balance}
+header.top .sub{display:block;font-family:var(--body);font-size:.78rem;font-weight:500;color:var(--muted);letter-spacing:.02em}
+.iconbtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;flex:none}
+.iconbtn svg{width:20px;height:20px;stroke:var(--ink);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+main .wrap{display:flex;flex-direction:column;gap:16px;padding-block:16px}
+.note{font-size:.88rem;color:var(--muted);background:var(--surface-2);border:1px dashed var(--line);border-radius:var(--r);padding:10px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.note b{color:var(--ink)}
+.note button{margin-left:auto}
+
+.h2{font-family:var(--display);font-weight:700;font-size:1.15rem;margin:0}
+.eyebrow{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spacer{flex:1}
+
+/* Plan */
+.planbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.planscroll{overflow:auto;-webkit-overflow-scrolling:touch;max-height:68vh;touch-action:pan-x pan-y}
+.planscroll svg{display:block;max-width:none}
+.plantools{display:flex;gap:8px;align-items:center;padding:8px 10px;border-top:1px solid var(--line);flex-wrap:wrap}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.placing{background:var(--accent);color:var(--accent-ink);border-radius:var(--r);padding:10px 12px;font-size:.9rem;display:flex;gap:10px;align-items:center}
+.placing button{margin-left:auto;background:var(--accent-ink);color:var(--accent);border:0;border-radius:10px;padding:6px 12px;font-weight:600}
+
+/* Buttons */
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:9px 14px;font-weight:600;font-size:.92rem;min-height:40px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--due);border-color:var(--due);background:transparent}
+.btn.small{padding:6px 10px;min-height:34px;font-size:.85rem}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:.85rem;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* Liste */
+.list{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.item{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;padding:12px 14px;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;width:100%}
+.item:last-child{border-bottom:0}
+.item .num{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.95rem;color:#fff;font-variant-numeric:tabular-nums}
+.item .t{min-width:0}
+.item .t strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .t small{display:block;color:var(--muted);font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{font-size:.75rem;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.pill.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.pill.soon{color:var(--soon);background:color-mix(in srgb,var(--soon) 16%,transparent)}
+.pill.due{color:var(--due);background:color-mix(in srgb,var(--due) 14%,transparent)}
+.pill.none{color:var(--none);background:color-mix(in srgb,var(--none) 16%,transparent)}
+.search{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 12px}
+.empty{padding:28px 16px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:var(--r)}
+
+/* Kennzahlen */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;min-width:0}
+.stat .v{font-family:var(--display);font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat .l{font-size:.75rem;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.chart svg{display:block;width:100%;height:auto;max-height:300px}
+table.t{width:100%;border-collapse:collapse;font-size:.9rem;font-variant-numeric:tabular-nums}
+table.t th{text-align:left;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:6px 4px;border-bottom:1px solid var(--line)}
+table.t td{padding:8px 4px;border-bottom:1px solid var(--line)}
+table.t tr:last-child td{border-bottom:0}
+table.t .r{text-align:right}
+.up{color:var(--ok)} .down{color:var(--due)}
+.tablewrap{overflow-x:auto}
+
+/* Tableiste */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:25;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+nav.tabs .in{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+nav.tabs button{border:0;background:transparent;padding:8px 4px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.7rem;font-weight:600;color:var(--muted);position:relative;min-width:0}
+nav.tabs button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav.tabs button[aria-current="page"]{color:var(--accent)}
+nav.tabs .badge{position:absolute;top:4px;left:calc(50% + 6px);background:var(--due);color:#fff;border-radius:999px;font-size:.65rem;min-width:17px;height:17px;padding:0 4px;display:grid;place-items:center;font-variant-numeric:tabular-nums}
+.fab{position:fixed;right:max(16px,calc(env(safe-area-inset-right,0px) + 16px));bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:24;width:56px;height:56px;border-radius:18px;border:0;background:var(--accent);color:var(--accent-ink);box-shadow:0 6px 18px rgba(0,0,0,.18);display:grid;place-items:center}
+.fab svg{width:26px;height:26px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round}
+
+/* Sheet */
+.sheet{position:fixed;inset:0;z-index:40;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,0px);padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}}
+.sheethead{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line)}
+.sheethead .wrap{display:flex;align-items:center;gap:10px;padding-block:10px}
+.sheethead h2{flex:1;margin:0;font-family:var(--display);font-size:1.2rem;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.linkbtn{border:0;background:none;color:var(--accent);font-weight:600;padding:8px 4px;font-size:1rem}
+.sheet .wrap.body{display:flex;flex-direction:column;gap:14px;padding-block:16px}
+.hero{display:flex;gap:14px;align-items:center}
+.hero .big{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:1.5rem;color:#fff;flex:none;font-variant-numeric:tabular-nums}
+.hero .t{min-width:0}
+.hero .t strong{font-family:var(--display);font-size:1.3rem;display:block;line-height:1.2}
+.hero .t span{color:var(--muted);font-size:.9rem}
+dl.kv{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:0;font-size:.93rem}
+dl.kv dt{color:var(--muted)}
+dl.kv dd{margin:0;font-variant-numeric:tabular-nums;min-width:0}
+.hint{font-size:.85rem;color:var(--muted)}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form .full{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:.78rem;font-weight:600;color:var(--muted)}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 11px;font-size:16px;min-height:44px}
+.field textarea{min-height:80px;resize:vertical}
+.mlist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ptile{display:inline-grid;place-items:center;background:var(--picto-bg);border-radius:12px;flex:none;padding:6px}
+.mitem .ptile{padding:4px;border-radius:9px}
+.guide{display:flex;flex-direction:column;gap:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.guide .ghead{display:flex;gap:12px;align-items:flex-start}
+.guide .gt{min-width:0;display:flex;flex-direction:column;gap:4px}
+.guide .gt strong{font-family:var(--display);font-size:1.05rem}
+.guide p{margin:0;font-size:.9rem}
+.guide .ziel{color:var(--accent);font-size:.88rem}
+.guide .when{color:var(--muted);font-size:.85rem}
+.guide ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px;font-size:.9rem;max-width:65ch}
+.guide .warn{background:var(--warn-bg);border-radius:8px;padding:8px 10px;font-size:.85rem}
+.gdet summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:.9rem;padding:2px 0}
+.gdet[open] summary{margin-bottom:8px}
+.guides{display:flex;flex-direction:column;gap:12px}
+/* Apfelwein */
+.av{border-radius:50%;object-fit:cover;vertical-align:middle;flex:none;display:inline-block}
+.av0{display:inline-grid;place-items:center;background:var(--surface-2);color:var(--muted);font-size:.65rem;font-weight:700;border:1px solid var(--line)}
+.pchips .chip{display:inline-flex;align-items:center;gap:6px}
+.byme{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted)}
+.loglist{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.logitem{display:grid;grid-template-columns:28px 1fr;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);align-items:start}
+.logitem:last-child{border-bottom:0}
+.logitem b{font-size:.85rem}
+.logitem p{margin:2px 0 0;font-size:.92rem}
+.logitem small{color:var(--muted);font-size:.78rem;font-variant-numeric:tabular-nums}
+.who{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--muted)}
+.ptable{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.phead2{display:none}
+.prow{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:transparent;padding:12px 14px;align-items:start}
+.prow:last-child{border-bottom:0}
+.pc{display:flex;flex-direction:column;gap:5px;min-width:0;align-items:flex-start}
+.pbaum{grid-column:1/-1;flex-direction:row;align-items:center;gap:10px}
+.pbaum .num{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:.9rem;color:#fff;flex:none;font-variant-numeric:tabular-nums}
+.pbaum .t{min-width:0;display:flex;flex-direction:column}
+.pbaum strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc small{color:var(--muted);font-size:.8rem;font-variant-numeric:tabular-nums}
+.plabel{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.schs{display:flex;flex-wrap:wrap;gap:5px}
+.sch{display:inline-flex;align-items:center;gap:4px;font-size:.76rem;font-weight:600;padding:2px 8px 2px 3px;border-radius:999px;border:1px solid transparent;max-width:100%}
+.sch .picto{flex:none}
+.sch.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.sch.soon{color:var(--soon);background:color-mix(in srgb,var(--soon) 15%,transparent)}
+.sch.due{color:var(--due);background:color-mix(in srgb,var(--due) 13%,transparent)}
+.sch.todo{color:var(--ink);border:1px dashed var(--muted);background:transparent}
+@media (hover:hover){.prow:hover{background:var(--surface-2)}}
+@media (min-width:768px){
+  .phead2{display:grid;grid-template-columns:minmax(200px,1.1fr) minmax(180px,1fr) 1.6fr;gap:14px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--surface-2)}
+  .prow{grid-template-columns:minmax(200px,1.1fr) minmax(180px,1fr) 1.6fr;align-items:center}
+  .pbaum{grid-column:auto}
+  .prow .plabel{display:none}
+}
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px;align-self:flex-start}
+.seg button{border:0;background:transparent;border-radius:9px;padding:7px 16px;font-weight:600;font-size:.9rem;color:var(--muted);min-height:36px}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.casks{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));gap:12px}
+.cask{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:8px;text-align:left;align-items:stretch;min-width:0}
+.cask .cpic{display:grid;place-items:center;background:var(--picto-bg);border-radius:12px;padding:10px 0 6px}
+.cask strong{font-family:var(--display);font-size:1.05rem;line-height:1.2}
+.cask small{color:var(--muted);font-size:.8rem;font-variant-numeric:tabular-nums}
+.prog{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden}
+.prog span{display:block;height:100%;background:var(--accent);border-radius:3px}
+@media (hover:hover){.cask:hover{border-color:var(--muted)}}
+.steps{display:flex;flex-direction:column;gap:0}
+.step{display:grid;grid-template-columns:22px 1fr;gap:10px;position:relative;padding-bottom:14px}
+.step:last-child{padding-bottom:0}
+.step::before{content:"";position:absolute;left:10px;top:20px;bottom:0;width:2px;background:var(--line)}
+.step:last-child::before{display:none}
+.step .dot2{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);background:var(--surface);display:grid;place-items:center;font-size:.7rem;font-weight:700;color:var(--accent-ink)}
+.step.done .dot2{background:var(--accent);border-color:var(--accent)}
+.step.now .dot2{border-color:var(--soon);background:color-mix(in srgb,var(--soon) 25%,var(--surface))}
+.step.late .dot2{border-color:var(--due);background:color-mix(in srgb,var(--due) 20%,var(--surface))}
+.step .sb{display:flex;flex-direction:column;gap:4px;min-width:0}
+.step .sb b{font-size:.95rem}
+.step .sb span{color:var(--muted);font-size:.85rem;font-variant-numeric:tabular-nums}
+.inlineform{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.inlineform input,.inlineform select{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 10px;font-size:16px;min-height:40px;min-width:0}
+.tip{background:var(--warn-bg);border-radius:10px;padding:10px 12px;font-size:.9rem}
+.mchart svg{display:block;width:100%;height:auto}
+.leit ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:10px;max-width:68ch}
+.leit li b{display:block}
+.leit summary{cursor:pointer;font-weight:700;font-family:var(--display);font-size:1.05rem}
+.leit[open] summary{margin-bottom:12px}
+@keyframes bub{0%{transform:translateY(2px);opacity:0}25%{opacity:1}100%{transform:translateY(-5px);opacity:0}}
+@keyframes rise{0%{transform:translateY(0);opacity:0}15%{opacity:.9}100%{transform:translateY(-26px);opacity:0}}
+.bub{animation:bub 1.8s ease-in infinite;transform-box:fill-box}
+.bub.d2{animation-delay:.9s}
+.rise{animation:rise 3.2s linear infinite;transform-box:fill-box}
+.rise.d2{animation-delay:1.1s}.rise.d3{animation-delay:2.1s}
+@media (prefers-reduced-motion:reduce){.bub,.rise{animation:none}}
+.prod{gap:14px}
+.phead{display:flex;gap:14px;align-items:center}
+.ptile.big{padding:8px;border-radius:16px}
+.pt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.pbig{font-family:var(--display);font-size:2.2rem;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+.pbig span{font-size:1rem;font-weight:500;color:var(--muted)}
+.psub{font-size:.85rem;color:var(--muted)}
+.psub b{color:var(--ink)}
+.ptiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.ptile2{display:flex;flex-direction:column;align-items:center;text-align:center;gap:3px;padding:10px 6px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);min-width:0}
+.ptile2 b{font-family:var(--display);font-size:1.1rem;font-variant-numeric:tabular-nums}
+.ptile2 span:not(.ptile){font-size:.8rem;line-height:1.2}
+.ptile2 small{font-size:.72rem;color:var(--muted)}
+.ptiles.muted .ptile2{opacity:.55;border-style:dashed}
+.vitem{grid-template-columns:44px 1fr auto}
+.vitem .ptile{padding:5px;border-radius:10px}
+.vitem .t strong,.vitem .t small{white-space:normal;overflow:visible}
+.mitem{display:flex;gap:8px;align-items:center;padding:10px 6px 10px 12px;border-bottom:1px solid var(--line)}
+.mitem:last-child{border-bottom:0}
+.mitem .mt{flex:1;min-width:0}
+.mitem .mt strong{display:block;font-size:.93rem}
+.mitem .mt small{display:block;color:var(--muted);font-size:.8rem;font-variant-numeric:tabular-nums}
+.mitem.done .mt{opacity:.6}
+.yrow{display:grid;grid-template-columns:70px 1fr 64px 36px;gap:8px;align-items:center;font-variant-numeric:tabular-nums}
+.yrow .bar{height:12px;border-radius:6px;background:var(--accent)}
+.yrow .bg{background:var(--surface-2);border-radius:6px}
+.yadd{display:grid;grid-template-columns:1fr 1fr auto;gap:8px}
+.yadd input{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px;font-size:16px;min-height:44px}
+.x{border:0;background:none;color:var(--muted);font-size:1.1rem;width:36px;height:36px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom,0px));z-index:60;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:.9rem;max-width:calc(100% - 32px);box-shadow:0 6px 18px rgba(0,0,0,.2)}
+@media (max-width:380px){.stats{grid-template-columns:repeat(2,1fr)}}
+/* ---- Hover (Mac / iPad mit Trackpad) ---- */
+@media (hover:hover){
+  .item:hover{background:var(--surface-2)}
+  .btn:hover{border-color:var(--muted)}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .chip:hover{border-color:var(--muted)}
+  nav.tabs button:hover{color:var(--ink)}
+  #plan g[data-id]:hover circle{filter:brightness(1.12)}
+}
+.cols{display:grid;gap:16px;grid-template-columns:1fr}
+.stats.stats4{grid-template-columns:repeat(2,1fr)}
+@media (min-width:768px){.stats.stats4{grid-template-columns:repeat(4,minmax(0,220px))}}
+.addtop{display:none}
+.rowpick{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.rp{border:1px solid var(--line);background:var(--surface);border-radius:10px;min-height:44px;font-weight:600;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
+.rp small{font-size:.65rem;font-weight:500;color:var(--muted)}
+.rp[aria-pressed="true"]{background:var(--fallow);border-color:var(--fallow-line);color:var(--muted);text-decoration:line-through;background-image:repeating-linear-gradient(45deg,transparent 0 5px,var(--fallow-line) 5px 6px)}
+body.sheet-open{overflow:hidden}
+/* ---- iPad hochkant & größer: Seitenleiste statt Tableiste ---- */
+@media (min-width:768px){
+  body{padding-bottom:0;padding-left:calc(92px + env(safe-area-inset-left,0px))}
+  nav.tabs{top:0;bottom:0;right:auto;width:calc(92px + env(safe-area-inset-left,0px));border-top:0;border-right:1px solid var(--line);padding-top:calc(env(safe-area-inset-top,0px) + 72px);padding-right:0}
+  nav.tabs .in{grid-template-columns:1fr;grid-auto-rows:min-content;gap:6px;max-width:none}
+  nav.tabs button{padding:10px 4px;border-radius:14px;margin:0 8px;font-size:.74rem}
+  nav.tabs button[aria-current="page"]{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+  nav.tabs .badge{top:6px}
+  .fab{display:none!important}
+  .addtop{display:inline-block}
+  .wrap{max-width:1180px}
+  main .wrap{padding-block:20px;gap:18px}
+  .planscroll{max-height:none}
+  .planscroll svg{margin:0 auto}
+  .toast{bottom:calc(32px + env(safe-area-inset-bottom,0px))}
+  .cols{grid-template-columns:1fr 1fr;align-items:start}
+  .stats{grid-template-columns:repeat(3,minmax(0,220px))}
+  .sheet .wrap{max-width:720px}
+}
+/* ---- iPad quer & Mac: Details als Seitenpanel neben dem Inhalt ---- */
+@media (min-width:1100px){
+  body.sheet-open{overflow:auto;padding-right:420px}
+  .sheet{inset:0 0 0 auto;width:420px;border-left:1px solid var(--line);background:var(--bg);animation:side .2s ease-out;box-shadow:-8px 0 24px rgba(0,0,0,.06)}
+  @keyframes side{from{transform:translateX(24px);opacity:.6}to{transform:none;opacity:1}}
+  .sheet .wrap{max-width:none}
+  .sheet .form{grid-template-columns:1fr 1fr}
+}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none!important}}
+</style>
+
+<header class="top"><div class="wrap">
+  <h1 id="title">Obstgarten<span class="sub" id="subtitle">wird geladen …</span></h1>
+  <button class="btn primary addtop" id="btnAddTop" type="button">+ Baum</button>
+  <button class="iconbtn" id="btnLog" aria-label="Änderungsverlauf"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg></button>
+  <button class="iconbtn" id="btnSettings" aria-label="Grundstück einstellen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+</div></header>
+
+<main><div class="wrap" id="view"></div></main>
+
+<button class="fab" id="fab" aria-label="Baum hinzufügen"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+
+<nav class="tabs"><div class="in">
+  <button data-tab="plan" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>Plan</button>
+  <button data-tab="baeume"><svg viewBox="0 0 24 24"><circle cx="12" cy="9" r="6"/><path d="M12 15v6M9 21h6"/></svg>Bäume</button>
+  <button data-tab="schnitt"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.1 15.9M14.5 14.5L20 20M8.1 8.1L12 12"/></svg>Pflege<span class="badge" id="dueBadge" hidden></span></button>
+  <button data-tab="ernte"><svg viewBox="0 0 24 24"><path d="M9 2h6M10 2v4l-2 3v11a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V9l-2-3V2"/><path d="M8 13h8"/></svg>Ertrag</button>
+  <button data-tab="wein"><svg viewBox="0 0 24 24"><path d="M10 2h4M12 2v4M9 6h6v3c3 1 5 4 5 7.5 0 3.5-2.5 5.5-8 5.5s-8-2-8-5.5C4 13 6 10 9 9z"/><path d="M5 15h14"/></svg>Apfelwein<span class="badge" id="weinBadge" hidden></span></button>
+</div></nav>
+
+<div id="sheet" class="sheet" hidden></div>
+<div id="toast" class="toast" hidden></div>
+
+<div id="gate" hidden></div>
+<template id="gateLogo"><svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#2f6b3a"/><path d="M32 52V32" stroke="#f3efe2" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="24" r="14" fill="#7fc489"/><circle cx="26" cy="22" r="3.5" fill="#c0353a"/><circle cx="37" cy="27" r="3.5" fill="#c0353a"/><circle cx="35" cy="17" r="3" fill="#c0353a"/></svg></template>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="host.js"></script>
+<script>
+(function(){
+"use strict";
+/* ---------- Fachwissen ---------- */
+const ARTEN = ["Apfel","Birne","Süßkirsche","Sauerkirsche","Zwetschge","Pflaume","Mirabelle","Reneklode","Quitte","Aprikose","Pfirsich","Walnuss","Esskastanie","Speierling","Weinrebe","Sonstige"];
+const WUCHS = ["Hochstamm","Halbstamm","Viertelstamm","Buschbaum","Spindel","Spalier"];
+const SCHNITTZEIT = {
+  "Apfel":"Winterschnitt Feb–März, bei starkem Wuchs zusätzlich Sommerschnitt Juli/Aug.",
+  "Birne":"Winterschnitt Feb–März, Sommerschnitt ab Ende Juli möglich.",
+  "Quitte":"Zurückhaltend im späten Winter (Feb–März) auslichten.",
+  "Süßkirsche":"Sommerschnitt direkt nach der Ernte (Juli/Aug.) – kein Winterschnitt.",
+  "Sauerkirsche":"Nach der Ernte schneiden, abgetragene Triebe entfernen.",
+  "Zwetschge":"Nach der Ernte (Aug./Sep.) oder im zeitigen Frühjahr.",
+  "Pflaume":"Nach der Ernte (Aug./Sep.) oder im zeitigen Frühjahr.",
+  "Mirabelle":"Nach der Ernte oder im zeitigen Frühjahr auslichten.",
+  "Reneklode":"Nach der Ernte oder im zeitigen Frühjahr auslichten.",
+  "Aprikose":"Nach der Ernte im Spätsommer, Gummifluss beachten.",
+  "Pfirsich":"Zur Blüte bzw. kurz danach, jährlich Fruchtholz erneuern.",
+  "Walnuss":"Nur bei Bedarf im Spätsommer (Aug./Sep.), nie im Winter (blutet).",
+  "Esskastanie":"Selten nötig; Totholz im Spätwinter entfernen.",
+  "Speierling":"Kaum Schnitt nötig; nur auslichten und Totholz im Spätwinter entfernen.",
+  "Weinrebe":"Rebschnitt jedes Jahr Jan.–März (frostfreie Tage); im Sommer Geiztriebe ausbrechen und Laub auslichten.",
+  "Sonstige":"Je nach Art – meist Spätwinter oder nach der Ernte."
+};
+const STATUS_TXT = {due:"überfällig",soon:"bald fällig",ok:"im Plan",none:"kein Datum"};
+const SCHUTZ_ARTEN = ["Spritzung","Leimring","Raupenleim","Pheromonfalle","Netz / Vlies","Stammanstrich (Weißeln)","Wühlmausschutz","Nützlinge / Nistkasten","Sonstiges"];
+/* Anleitungen je Maßnahme */
+const SCHUTZ_INFO = {
+  "Spritzung":{
+    kurz:"Pflanzenschutzmittel gezielt ausbringen, z. B. gegen Pilzkrankheiten oder Läuse.",
+    wann:"Bei Befall bzw. laut Gebrauchsanleitung; trocken, windstill, am besten abends.",
+    schritte:[
+      "Nur Mittel verwenden, die für Haus- und Kleingarten zugelassen sind, und die Gebrauchsanleitung genau befolgen.",
+      "Handschuhe und Schutzbrille tragen, Spritzbrühe frisch und nur in benötigter Menge ansetzen.",
+      "Blattober- und -unterseiten gleichmäßig benetzen, nicht bis zum Abtropfen spritzen.",
+      "Mittel, Menge und Datum hier notieren.",
+      "Spritze danach gründlich mit Wasser ausspülen, Reste nie in Abfluss oder Gully kippen."
+    ],
+    achtung:"Wartezeit bis zur Ernte einhalten. Bienengefährliche Mittel nie in die offene Blüte spritzen."
+  },
+  "Leimring":{
+    kurz:"Klebering um den Stamm, an dem die flugunfähigen Frostspanner-Weibchen beim Hochklettern hängen bleiben.",
+    wann:"Ende September anbringen, bis Ende Februar/März hängen lassen.",
+    schritte:[
+      "Lose Borke an der Stelle mit einer Bürste glätten, damit unter dem Ring keine Lücke bleibt.",
+      "Ring in etwa 1 m Höhe straff um den Stamm legen, Klebeseite nach außen.",
+      "Ritzen oben und unten mit dem beiliegenden Band oder etwas Lehm abdichten.",
+      "Stützpfähle ebenfalls beringen, sonst klettern die Weibchen dort hoch.",
+      "Alle 2–3 Wochen kontrollieren, Laub und Zweige abziehen. Im Frühjahr abnehmen und im Hausmüll entsorgen.",
+      "Nach dem Abnehmen den Stamm unterhalb des Rings absuchen und abbürsten, dort legen die Weibchen oft ihre Eier ab."
+    ],
+    achtung:"Im Sommer hilft ein Leimring auch gegen Ameisen, die Blattläuse in die Krone tragen."
+  },
+  "Raupenleim":{
+    kurz:"Streichfähiger Leim als Barriere gegen kriechende Schädlinge, wenn kein fertiger Ring passt.",
+    wann:"Wie der Leimring: Herbst bis Frühjahr, oder im Sommer gegen Ameisen.",
+    schritte:[
+      "Erst ein Papier- oder Folienband straff um den Stamm wickeln. Junge, glatte Rinde nicht direkt bestreichen.",
+      "Leim 5–10 cm breit rundum auftragen, ohne Lücken.",
+      "Bei Verschmutzung durch Laub oder Insekten nachstreichen.",
+      "Band samt Leim im Frühjahr entfernen."
+    ],
+    achtung:"Leim nicht auf die Rinde junger Bäume streichen, das kann sie schädigen."
+  },
+  "Pheromonfalle":{
+    kurz:"Lockstoff-Falle für die Männchen von Apfel- oder Pflaumenwickler. Zeigt vor allem, wann die Falter fliegen.",
+    wann:"Ab Blühende (etwa Mai) bis August.",
+    schritte:[
+      "Falle zusammenstecken, Klebeboden und Lockstoff-Kapsel einlegen.",
+      "Auf der Südseite in 1,5–2 m Höhe in die Krone hängen, eine Falle pro Baum oder kleiner Baumgruppe.",
+      "Wöchentlich die gefangenen Falter zählen und als Notiz eintragen.",
+      "Lockstoff alle 4–6 Wochen, Klebeboden bei Verschmutzung wechseln."
+    ],
+    achtung:"Die Falle fängt nur Männchen und ersetzt keine Bekämpfung. Steigen die Fänge stark, droht Madenbefall."
+  },
+  "Netz / Vlies":{
+    kurz:"Netz über der Krone hält Schädlinge oder Vögel von den Früchten fern. Gegen Insekten engmaschig, gegen Vögel gröber.",
+    wann:"Gegen Kirschfruchtfliege zur Flugzeit, bevor die Kirschen von grün nach gelb umfärben (etwa ab Blühende/Mai). Gegen Vögel und Wespen kurz vor der Reife.",
+    schritte:[
+      "Gegen Fliegen ein engmaschiges Insekten- bzw. Kulturschutznetz wählen (etwa 1 mm Maschenweite), gegen Vögel genügt ein Vogelschutznetz.",
+      "Netz über die ganze Krone ziehen, Äste nicht abknicken. Das klappt nur bei kleinen Kronen, deshalb Kirschen niedrig halten.",
+      "Unten am Stamm dicht zusammenbinden, damit keine Fliegen von unten hineinkommen.",
+      "Zusätzlich alle Früchte abernten und Fallobst sofort aufsammeln, sonst gelangen die Maden in den Boden.",
+      "Nach der Ernte abnehmen, trocknen und trocken lagern."
+    ],
+    achtung:"Vogelschutznetze täglich kontrollieren, damit sich keine Vögel verfangen. Gegen die Kirschfruchtfliege ist im Hausgarten kein Spritzmittel zugelassen, das Netz ist die wirksamste Maßnahme."
+  },
+  "Stammanstrich (Weißeln)":{
+    kurz:"Weißer Anstrich reflektiert die Wintersonne und verhindert Frostrisse in der Rinde.",
+    wann:"Spätherbst (November) an einem trockenen, frostfreien Tag.",
+    schritte:[
+      "Stamm mit einer groben Bürste von Moos und loser Borke befreien, ohne die Rinde zu verletzen. Bei jungen Bäumen nur eine weiche Bürste nehmen.",
+      "Fertigen Baumanstrich oder Kalkanstrich gut umrühren.",
+      "Vom Boden bis zu den ersten Ästen streichen, Astansätze mit erfassen.",
+      "Jedes Jahr erneuern, sobald der Anstrich abgewaschen ist."
+    ],
+    achtung:"Besonders wichtig bei jungen Bäumen und auf der Süd- und Westseite."
+  },
+  "Wühlmausschutz":{
+    kurz:"Schutz der Wurzeln vor Wühlmäusen durch Drahtkorb, Kontrolle und Fallen.",
+    wann:"Drahtkorb bei der Pflanzung, Kontrolle und Fallen vor allem im Herbst und Frühjahr.",
+    schritte:[
+      "Bei Neupflanzung den Wurzelballen in einen Drahtkorb (Maschenweite höchstens 13 mm) setzen, oben über den Boden ragen lassen.",
+      "Verwühlprobe: einen Gang 20 cm weit öffnen. Ist er nach einigen Stunden wieder zu, ist er bewohnt.",
+      "Falle in den bewohnten Gang setzen, dabei Handschuhe tragen, damit kein Geruch haftet.",
+      "Baumscheibe im Winter von hohem Gras und dickem Mulch freihalten."
+    ],
+    achtung:"Fallen täglich kontrollieren."
+  },
+  "Nützlinge / Nistkasten":{
+    kurz:"Meisen, Ohrwürmer und andere Nützlinge fressen Raupen und Blattläuse.",
+    wann:"Nistkästen im Herbst aufhängen, Ohrwurmtöpfe ab Juni.",
+    schritte:[
+      "Meisenkasten in 2–3 m Höhe aufhängen, Flugloch nach Osten oder Südosten. Flugloch 26–28 mm für Blaumeisen, 32 mm für Kohlmeisen.",
+      "Kasten jedes Jahr im September/Oktober reinigen.",
+      "Ohrwurmtopf: Tontopf mit Holzwolle oder Stroh füllen, kopfüber in den Baum hängen, Öffnung muss einen Ast berühren.",
+      "Wilde Ecken, Totholz und Blühstreifen stehen lassen, dort leben viele Nützlinge."
+    ],
+    achtung:"Ohrwurmtöpfe nicht an Pfirsich oder reifem Steinobst, dort naschen sie auch an Früchten."
+  },
+  "Sonstiges":{
+    kurz:"Eigene Maßnahme, z. B. Gelbtafel, Rückschnitt befallener Triebe oder Fallobst aufsammeln.",
+    wann:"", schritte:[], achtung:""
+  }
+};
+/* Welche Maßnahme passt zu welcher Obstart, und wogegen */
+const SCHUTZ_GRUPPE = {"Apfel":"kern","Birne":"kern","Quitte":"kern","Süßkirsche":"kirsche","Sauerkirsche":"kirsche","Zwetschge":"pflaume","Pflaume":"pflaume","Mirabelle":"pflaume","Reneklode":"pflaume","Aprikose":"pfirsich","Pfirsich":"pfirsich","Walnuss":"nuss","Esskastanie":"nuss","Speierling":"wild","Weinrebe":"rebe","Sonstige":"alle"};
+const SCHUTZ_EMPF = {
+  kern:{"Leimring":"gegen Frostspanner","Pheromonfalle":"Apfelwickler (Obstmade) überwachen","Spritzung":"z. B. gegen Schorf, Mehltau oder Blattläuse","Raupenleim":"gegen Frostspanner und Ameisen","Stammanstrich (Weißeln)":"gegen Frostrisse","Wühlmausschutz":"Wühlmäuse lieben Apfelwurzeln","Nützlinge / Nistkasten":"Meisen fressen Raupen, Ohrwürmer Blattläuse"},
+  kirsche:{"Netz / Vlies":"gegen Kirschfruchtfliege und Vögel","Leimring":"gegen Frostspanner","Spritzung":"z. B. gegen Monilia oder Blattläuse; gegen die Kirschfruchtfliege ist nichts zugelassen","Stammanstrich (Weißeln)":"gegen Frostrisse","Wühlmausschutz":"Schutz der Wurzeln","Nützlinge / Nistkasten":"Meisen und Ohrwürmer gegen Raupen und Läuse"},
+  pflaume:{"Pheromonfalle":"Pflaumenwickler überwachen","Leimring":"gegen Frostspanner","Spritzung":"z. B. gegen Blattläuse oder Monilia","Stammanstrich (Weißeln)":"gegen Frostrisse","Wühlmausschutz":"Schutz der Wurzeln","Nützlinge / Nistkasten":"Meisen gegen Raupen"},
+  pfirsich:{"Spritzung":"Pfirsich: gegen Kräuselkrankheit beim Knospenschwellen","Stammanstrich (Weißeln)":"Aprikose und Pfirsich sind besonders frostrissgefährdet","Wühlmausschutz":"Schutz der Wurzeln","Netz / Vlies":"gegen Vögel und Wespen","Nützlinge / Nistkasten":"Nistkasten ja, Ohrwurmtöpfe hier besser nicht"},
+  nuss:{"Wühlmausschutz":"Schutz junger Bäume","Nützlinge / Nistkasten":"Meisen gegen Raupen"},
+  wild:{"Wühlmausschutz":"junge Bäume sind stark gefährdet","Stammanstrich (Weißeln)":"gegen Frostrisse bei jungen Bäumen","Nützlinge / Nistkasten":"Meisen gegen Raupen"},
+  rebe:{"Spritzung":"z. B. gegen Echten oder Falschen Mehltau","Netz / Vlies":"gegen Vögel und Wespen, alternativ Traubenschutzbeutel","Nützlinge / Nistkasten":"Nützlinge fördern"}
+};
+function schutzFuer(art){
+  const g = SCHUTZ_GRUPPE[art] || "alle";
+  if(g === "alle") return {empf: SCHUTZ_ARTEN.filter(a => a !== "Sonstiges"), ziel:{}, weitere:["Sonstiges"]};
+  const ziel = SCHUTZ_EMPF[g], empf = Object.keys(ziel);
+  return {empf, ziel, weitere: SCHUTZ_ARTEN.filter(a => !empf.includes(a))};
+}
+function schutzOptions(art){
+  const {empf, ziel, weitere} = schutzFuer(art);
+  return `<optgroup label="Empfohlen für ${esc(art)}">${empf.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join("")}</optgroup>
+    <optgroup label="Weitere Maßnahmen">${weitere.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join("")}</optgroup>`;
+}
+const SCHUTZ_HINT = Object.fromEntries(Object.entries(SCHUTZ_INFO).map(([k,v]) => [k, v.kurz]));
+
+/* Piktogramme (64 × 64) */
+function picto(art, size){
+  const A = 'stroke="var(--accent)"', I = 'stroke="var(--ink)"';
+  const trunk = `<path d="M24 58 L26 8 M40 58 L38 8" ${I} stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+  const ground = `<path d="M8 58 H56" ${I} stroke-width="2.5" stroke-linecap="round"/>`;
+  const P = {
+    "Spritzung": `<rect x="12" y="24" width="22" height="30" rx="6" fill="var(--accent)" opacity=".18"/><rect x="12" y="24" width="22" height="30" rx="6" fill="none" ${A} stroke-width="2.5"/><path d="M16 34 H30" ${A} stroke-width="1.5"/>
+      <rect x="18" y="18" width="10" height="6" rx="1.5" fill="none" ${I} stroke-width="2.5"/>
+      <path d="M23 18 V10 M16 10 H30" ${I} stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M34 46 C44 46 42 32 46 28 L54 20" fill="none" ${I} stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="57" cy="15" r="1.8" fill="var(--accent)"/><circle cx="60" cy="21" r="1.8" fill="var(--accent)"/><circle cx="52" cy="11" r="1.8" fill="var(--accent)"/><circle cx="59" cy="9" r="1.4" fill="var(--accent)"/>`,
+    "Leimring": `${trunk}${ground}
+      <rect x="21" y="26" width="22" height="8" rx="2" fill="var(--accent)"/>
+      <path d="M32 50 V40" ${I} stroke-width="2" stroke-linecap="round"/><path d="M28 43 L32 38 L36 43" fill="none" ${I} stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M44 44 L52 52 M52 44 L44 52" stroke="var(--due)" stroke-width="2.5" stroke-linecap="round"/>`,
+    "Raupenleim": `${trunk}${ground}
+      <rect x="22" y="28" width="20" height="8" rx="1" fill="var(--accent)" opacity=".85"/>
+      <path d="M27 36 v4 M35 36 v3" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M44 26 L50 20 L54 24 L48 30 Z" fill="var(--accent)" ${I} stroke-width="2" stroke-linejoin="round"/>
+      <path d="M52 22 L60 14" ${I} stroke-width="3" stroke-linecap="round"/>`,
+    "Pheromonfalle": `<path d="M4 12 C20 10 44 14 60 12" fill="none" ${I} stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M32 12 V22" ${I} stroke-width="2"/>
+      <path d="M16 48 L32 22 L48 48 Z" fill="var(--accent)" opacity=".18"/><path d="M16 48 L32 22 L48 48 Z" fill="none" ${A} stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M14 48 H50" ${I} stroke-width="2.5" stroke-linecap="round"/>
+      <ellipse cx="28.5" cy="41" rx="4" ry="2.4" fill="var(--ink)" transform="rotate(-25 28.5 41)"/><ellipse cx="35.5" cy="41" rx="4" ry="2.4" fill="var(--ink)" transform="rotate(25 35.5 41)"/>`,
+    "Netz / Vlies": `<path d="M32 40 V58" ${I} stroke-width="3" stroke-linecap="round"/>${ground}
+      <circle cx="32" cy="26" r="13" fill="var(--accent)" opacity=".35"/>
+      <path d="M12 44 C10 12 20 4 32 4 C44 4 54 12 52 44 L34 50 L30 50 Z" fill="none" ${A} stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M18 12 L46 44 M26 6 L52 34 M12 26 L36 50 M46 12 L18 44 M38 6 L12 34 M52 26 L28 50" stroke="var(--accent)" stroke-width="1" opacity=".7"/>`,
+    "Stammanstrich (Weißeln)": `${trunk}${ground}
+      <path d="M24.2 56 L25.4 24 H38.6 L39.8 56 Z" fill="var(--picto-white)" stroke="var(--muted)" stroke-width="1"/>
+      <path d="M44 34 L50 28 L54 32 L48 38 Z" fill="var(--picto-white)" ${I} stroke-width="2" stroke-linejoin="round"/>
+      <path d="M52 30 L60 22" ${I} stroke-width="3" stroke-linecap="round"/>`,
+    "Wühlmausschutz": `<path d="M32 24 V8" ${I} stroke-width="2.5" stroke-linecap="round"/>
+      <ellipse cx="26" cy="12" rx="5" ry="2.5" fill="var(--accent)" transform="rotate(-30 26 12)"/><ellipse cx="38" cy="10" rx="5" ry="2.5" fill="var(--accent)" transform="rotate(30 38 10)"/>
+      <rect x="4" y="24" width="56" height="36" fill="var(--soil)" opacity=".6"/>
+      <path d="M4 24 H60" ${I} stroke-width="2.5" stroke-linecap="round"/>
+      <circle cx="32" cy="40" r="10" fill="var(--soil)" ${I} stroke-width="1.5"/>
+      <path d="M32 30 V50 M26 34 L22 46 M38 34 L42 46" stroke="var(--ink)" stroke-width="1.2" opacity=".6"/>
+      <path d="M18 20 V40 A14 14 0 0 0 46 40 V20" fill="none" ${A} stroke-width="2.5"/>
+      <path d="M24 20 V53 M32 20 V54 M40 20 V53 M18 30 H46 M18.5 42 H45.5 M22 50 H42" stroke="var(--accent)" stroke-width="1.1"/>`,
+    "Nützlinge / Nistkasten": `<path d="M32 46 V60" ${I} stroke-width="3" stroke-linecap="round"/>
+      <path d="M18 26 V46 H46 V26" fill="var(--accent)" opacity=".18"/>
+      <path d="M18 26 V46 H46 V26" fill="none" ${A} stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M12 28 L32 10 L52 28" fill="none" ${I} stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="32" cy="33" r="4.5" fill="var(--ink)"/>
+      <path d="M32 40 v3" ${I} stroke-width="2" stroke-linecap="round"/>`,
+    "Sonstiges": `<circle cx="32" cy="32" r="20" fill="var(--accent)" opacity=".18"/><circle cx="32" cy="32" r="20" fill="none" ${A} stroke-width="2.5"/>
+      <circle cx="32" cy="22" r="2.6" fill="var(--accent)"/><path d="M32 30 V44" ${A} stroke-width="4" stroke-linecap="round"/>`
+  };
+  return `<svg class="picto" viewBox="0 0 64 64" width="${size}" height="${size}" aria-hidden="true">${P[art] || P["Sonstiges"]}</svg>`;
+}
+function guideHTML(art, compact, obst){
+  const g = SCHUTZ_INFO[art] || SCHUTZ_INFO["Sonstiges"];
+  const z = obst ? schutzFuer(obst).ziel[art] : null;
+  return `<div class="guide${compact?" compact":""}">
+    <div class="ghead"><span class="ptile">${picto(art, compact?48:64)}</span><div class="gt">${compact?"":`<strong>${esc(art)}</strong>`}${z?`<p class="ziel"><b>Bei ${esc(obst)}:</b> ${esc(z)}</p>`:""}<p>${esc(g.kurz)}</p>${g.wann?`<p class="when"><b>Wann:</b> ${esc(g.wann)}</p>`:""}</div></div>
+    ${g.schritte.length ? (compact
+      ? `<details class="gdet" id="gdet"><summary>Anleitung anzeigen</summary><ol>${g.schritte.map(x => `<li>${esc(x)}</li>`).join("")}</ol>${g.achtung?`<p class="warn">${esc(g.achtung)}</p>`:""}</details>`
+      : `<ol>${g.schritte.map(x => `<li>${esc(x)}</li>`).join("")}</ol>${g.achtung?`<p class="warn">${esc(g.achtung)}</p>`:""}`) : ""}
+  </div>`;
+}
+/* Vorbereitet, noch nicht sichtbar: auf true setzen, um Export/Import in den Einstellungen zu zeigen. */
+const FEATURES = {exportImport:false};
+const EXPORT_FORMAT = "obstgarten-export", EXPORT_VERSION = 1;
+
+/* ---------- Zustand ---------- */
+const DEFAULT_FLAECHEN = [{id:"g1", name:"Grundstück 1", breite:20, laenge:60, reihen:12},{id:"g2", name:"Grundstück 2", breite:20, laenge:60, reihen:12}];
+let db = null, trees = [], garden = {name:"", flaechen: DEFAULT_FLAECHEN}, loaded = false, readOnly = false;
+let batches = [], batchYear = null, casks = [];
+let userApi = null, meId = null, canWrite = null, people = {}, protokoll = [], personFilter = "alle";
+let ertragSeg = "uebersicht";
+try{ const v = localStorage.getItem("obstgarten.ertragSeg"); if(v === "statistik" || v === "uebersicht") ertragSeg = v; }catch(_){}
+let tab = "plan", zoom = 1, artFilter = "Alle", plotFilter = "Alle", query = "", statYear = null;
+let sheetState = null; // {mode:'detail'|'edit'|'settings', id, draft}
+let placing = null;    // draft während Positionierung
+
+/* ---------- Hilfen ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const todayISO = () => { const d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+const fmtDate = iso => { if(!iso) return "–"; const [y,m,d] = iso.split("-"); return d+"."+m+"."+y; };
+const addMonths = (iso, n) => { const [y,m,d] = iso.split("-").map(Number); const dt = new Date(y, m-1+Number(n), d); return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0"); };
+const daysUntil = iso => { const [y,m,d] = iso.split("-").map(Number); const t = new Date(); t.setHours(0,0,0,0); return Math.round((new Date(y,m-1,d) - t)/86400000); };
+const kg = v => (Math.round(v*10)/10).toLocaleString("de-DE",{maximumFractionDigits:1});
+const statusColor = s => `var(--${s})`;
+
+function nextCut(t){ return t.letzterSchnitt ? addMonths(t.letzterSchnitt, t.intervall || 12) : null; }
+function status(t){ const n = nextCut(t); if(!n) return "none"; const d = daysUntil(n); return d < 0 ? "due" : d <= 60 ? "soon" : "ok"; }
+function dueText(t){
+  const n = nextCut(t); if(!n) return "kein Schnitt erfasst";
+  const d = daysUntil(n);
+  if(d < 0) return `seit ${-d} Tagen fällig`;
+  if(d === 0) return "heute fällig";
+  if(d <= 60) return `in ${d} Tagen`;
+  return fmtDate(n);
+}
+const byNr = (a,b) => (parseInt(a.nr)||9999) - (parseInt(b.nr)||9999) || String(a.nr).localeCompare(String(b.nr));
+const yieldYears = () => { const s = new Set(); trees.forEach(t => Object.keys(t.ertrag||{}).forEach(y => s.add(y))); return [...s].sort(); };
+
+function toast(msg){ const el = $("#toast"); el.textContent = msg; el.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(()=> el.hidden = true, 2600); }
+
+/* ---------- Speichern ---------- */
+const nowISO = () => new Date().toISOString();
+const stamp = o => ({...o, geaendertVon: meId, geaendertAm: nowISO()});
+async function save(fn, okMsg, ctx){
+  if(!db){ toast("Speichern ist hier nicht verfügbar."); return false; }
+  if(canWrite === false){ toast("Du hast nur Lesezugriff und kannst nichts ändern."); return false; }
+  try{
+    await fn(); if(okMsg) toast(okMsg);
+    const text = ctx ? `${ctx}: ${okMsg}` : okMsg;
+    if(text) db.collection("protokoll").doc().set({at: nowISO(), by: meId, text}).catch(() => {});
+    return true;
+  }
+  catch(e){
+    if(e && e.code === "invalid_argument"){ readOnly = true; toast("Speichern nicht möglich – du hast nur Lesezugriff."); }
+    else if(e && e.code === "quota_exceeded"){ toast("Speicher voll – bitte alte Einträge löschen."); }
+    else toast("Speichern fehlgeschlagen. Bitte erneut versuchen.");
+    return false;
+  }
+}
+function plain(t){ const {id, ...rest} = t; return JSON.parse(JSON.stringify(rest)); }
+function treeBody(t){ return plain(stamp(t)); }
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+/* offene Pflanzenschutz-Fristen (z. B. Leimring entfernen) */
+function schutzFristen(){
+  const out = [];
+  trees.forEach(t => (t.schutz||[]).forEach(m => { if(m.bis && !m.erledigt) out.push({t, m, d: daysUntil(m.bis)}); }));
+  return out.sort((a,b) => a.d - b.d);
+}
+function schutzAktiv(t){
+  return (t.schutz||[]).filter(m => !m.erledigt && (m.bis ? daysUntil(m.bis) >= 0 : daysUntil(m.datum) > -365));
+}
+
+/* ---------- Personen ---------- */
+const UNBEKANNT = "unbekannt";
+function personName(id){
+  if(!id) return "Unbekannt";
+  const p = people[id];
+  if(id === meId) return (p && p.name) ? p.name + " (du)" : "Du";
+  return (p && p.name) || "Jemand";
+}
+function avatar(id, size = 20){
+  const p = id && people[id];
+  if(p && p.avatarUrl) return `<img class="av" src="${esc(p.avatarUrl)}" width="${size}" height="${size}" alt="">`;
+  const nm = p && p.name ? p.name.trim()[0].toUpperCase() : "?";
+  return `<span class="av av0" style="width:${size}px;height:${size}px;${p && p.name && p.color ? `background:${esc(p.color)};color:#fff;border-color:transparent` : ""}">${esc(nm)}</span>`;
+}
+const byLine = id => id ? ` · ${esc(personName(id))}` : "";
+function allPersonIds(){
+  const s = new Set();
+  const add = v => { if(v) s.add(v); };
+  trees.forEach(t => { add(t.angelegtVon); add(t.geaendertVon); add(t.letzterSchnittVon); Object.values(t.ertragMeta||{}).forEach(m => add(m && m.by)); (t.schutz||[]).forEach(m => { add(m.by); add(m.erledigtVon); }); });
+  batches.forEach(b => { add(b.by); add(b.geaendertVon); });
+  casks.forEach(c => { add(c.by); add(c.geaendertVon); add(c.abstichVon); add(c.geklaertVon); add(c.abgefuelltVon); (c.messungen||[]).forEach(m => add(m.by)); });
+  protokoll.forEach(l => add(l.by));
+  add(meId);
+  return [...s];
+}
+let _pp = null;
+async function refreshPeople(){
+  if(!userApi) return;
+  const ids = allPersonIds(); if(!ids.length) return;
+  const key = ids.sort().join(",");
+  if(_pp === key) return; _pp = key;
+  try{ const ps = await userApi.profiles(ids); let changed = false; for(const id of ids){ const p = ps[id]; if(p && (!people[id] || people[id].name !== p.name || people[id].avatarUrl !== p.avatarUrl)){ people[id] = {name:p.name, avatarUrl:p.avatarUrl, color:p.color}; changed = true; } } if(changed) render(); }catch(_){}
+}
+/* Wer hat einen Ertrag/Eintrag erfasst -> für Filter */
+const yieldBy = (t, y) => ((t.ertragMeta||{})[y] || {}).by || UNBEKANNT;
+const passPerson = id => personFilter === "alle" || (id || UNBEKANNT) === personFilter;
+const yieldOf = (t, y) => passPerson(yieldBy(t, y)) ? (Number((t.ertrag||{})[y]) || 0) : 0;
+function personChips(){
+  const ids = new Set();
+  trees.forEach(t => Object.keys(t.ertrag||{}).forEach(y => ids.add(yieldBy(t, y))));
+  batches.forEach(b => ids.add(b.by || UNBEKANNT));
+  casks.forEach(c => ids.add(c.by || UNBEKANNT));
+  const list = [...ids].sort((a,b) => a === UNBEKANNT ? 1 : b === UNBEKANNT ? -1 : personName(a).localeCompare(personName(b)));
+  if(list.length < 2 && personFilter === "alle") return "";
+  if(personFilter !== "alle" && !list.includes(personFilter)) list.push(personFilter);
+  return `<div class="chips pchips" role="group" aria-label="Nach Person filtern"><button class="chip" data-person="alle" aria-pressed="${personFilter==="alle"}">Alle Personen</button>${list.map(id => `<button class="chip" data-person="${esc(id)}" aria-pressed="${personFilter===id}">${id === UNBEKANNT ? "" : avatar(id, 18)}${esc(id === UNBEKANNT ? "Ohne Angabe" : personName(id))}</button>`).join("")}</div>`;
+}
+
+/* ---------- Export / Import (vorbereitet) ---------- */
+function buildExport(){
+  return {
+    format: EXPORT_FORMAT, version: EXPORT_VERSION, exportedAt: new Date().toISOString(),
+    garten: {name: garden.name||"", flaechen: garden.flaechen},
+    baeume: trees.filter(t => !t.beispiel).sort(byNr).map(t => ({id: t.id, ...plain(t)})),
+    verarbeitung: batches.filter(b => !b.beispiel).map(b => ({id: b.id, ...plain(b)})),
+    keller: casks.filter(c => !c.beispiel).map(c => ({id: c.id, ...plain(c)}))
+  };
+}
+function validateImport(obj){
+  if(!obj || obj.format !== EXPORT_FORMAT) return "Die Datei ist kein Obstgarten-Export.";
+  if(Number(obj.version) > EXPORT_VERSION) return "Die Datei stammt aus einer neueren App-Version.";
+  if(!Array.isArray(obj.baeume)) return "In der Datei fehlen die Bäume.";
+  if(obj.baeume.some(b => !b || typeof b !== "object" || !b.nr)) return "Mindestens ein Baum hat keine Nummer.";
+  return null;
+}
+/* mode: "merge" = gleiche Nummer wird überschrieben, Rest bleibt; "replace" = vorher alles löschen */
+async function applyImport(obj, mode){
+  const err = validateImport(obj); if(err) throw {code:"bad_file", message:err};
+  if(mode === "replace") for(const t of trees) await db.collection("trees").doc(t.id).delete();
+  const byNrMap = new Map(trees.map(t => [String(t.nr), t.id]));
+  for(const b of obj.baeume){
+    const {id, ...body} = b;
+    const target = (mode !== "replace" && byNrMap.get(String(b.nr))) || id || uid();
+    await db.collection("trees").doc(target).set(JSON.parse(JSON.stringify({...body, beispiel:false})));
+  }
+  if(Array.isArray(obj.keller)) for(const c of obj.keller){ const {id, ...body} = c; await db.collection("keller").doc(id || uid()).set(JSON.parse(JSON.stringify({...body, beispiel:false}))); }
+  if(Array.isArray(obj.verarbeitung)) for(const b of obj.verarbeitung){ const {id, ...body} = b; await db.collection("verarbeitung").doc(id || uid()).set(JSON.parse(JSON.stringify({...body, beispiel:false}))); }
+  if(obj.garten) await db.doc("settings/garten").set({name: obj.garten.name||"", flaechen: normFlaechen(obj.garten)});
+  return obj.baeume.length;
+}
+async function doExport(){
+  const json = JSON.stringify(buildExport(), null, 2);
+  const filename = `obstgarten-${todayISO()}.json`;
+  try{
+    const dl = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
+    if(dl){ await dl.save({filename, data: json}); toast("Export gespeichert"); return; }
+  }catch(_){ }
+  try{ await navigator.clipboard.writeText(json); toast("Export in die Zwischenablage kopiert"); }
+  catch(_){ toast("Export nicht möglich in dieser Ansicht."); }
+}
+
+/* ---------- Flächen ---------- */
+const PLOT_GAP = 8;
+function normFlaechen(v){
+  if(Array.isArray(v.flaechen) && v.flaechen.length) return v.flaechen.map((f,i) => ({id: String(f.id||"g"+(i+1)), name: f.name||`Grundstück ${i+1}`, breite: Number(f.breite)||20, laenge: Number(f.laenge)||60, reihen: Math.max(1, Math.round(Number(f.reihen)||12)), freieReihen: (Array.isArray(f.freieReihen) ? f.freieReihen : []).map(Number).filter(n => n >= 1 && n <= (Number(f.reihen)||12)).sort((a,b)=>a-b)}));
+  return DEFAULT_FLAECHEN;
+}
+function plotLayout(){
+  let ox = 0;
+  return garden.flaechen.map(f => { const o = {...f, ox}; ox += f.breite + PLOT_GAP; return o; });
+}
+const plotById = id => garden.flaechen.find(f => f.id === id) || null;
+const plotName = id => (plotById(id)||{}).name || "";
+const isPlaced = t => t.x != null && t.y != null && !!plotById(t.flaeche);
+/* Reihen laufen quer über das Grundstück (West–Ost), Reihe 1 im Norden */
+const rowH = f => f.laenge / f.reihen;
+const rowOf = (f, y) => Math.min(f.reihen, Math.max(1, Math.floor(y / rowH(f)) + 1));
+const rowCenter = (f, i) => Math.round((i - 0.5) * rowH(f) * 10) / 10;
+const isFreeRow = (f, i) => (f.freieReihen||[]).includes(i);
+const plantedRows = f => f.reihen - (f.freieReihen||[]).length;
+const treeRow = t => isPlaced(t) ? rowOf(plotById(t.flaeche), Number(t.y)) : (t.reihe || "");
+const totalArea = () => garden.flaechen.reduce((s,f) => s + f.breite*f.laenge, 0);
+function lageText(t){
+  if(!isPlaced(t)) return "";
+  return [plotName(t.flaeche), "Reihe "+treeRow(t)].join(", ");
+}
+
+/* ---------- Plan ---------- */
+function planSVG(){
+  const lay = plotLayout();
+  const W = lay.length ? lay[lay.length-1].ox + lay[lay.length-1].breite : 20;
+  const L = Math.max(...lay.map(f => f.laenge), 10);
+  const r = Math.max(W,L)/46, padT = r*4.2, padL = r*3.2, padB = r*2.6;
+  let g = "";
+  lay.forEach(f => {
+    const ox = f.ox, fw = f.breite, fl = f.laenge;
+    g += `<rect x="${ox}" y="0" width="${fw}" height="${fl}" fill="var(--grass)" stroke="var(--grid-strong)" stroke-width="0.25" rx="0.4"/>`;
+    for(let x=0; x<=fw+0.001; x+=5){ const strong = x%10===0; g += `<line x1="${ox+x}" y1="0" x2="${ox+x}" y2="${fl}" stroke="var(${strong?"--grid-strong":"--grid"})" stroke-width="${strong?0.12:0.07}"/>`; if(strong) g += `<text x="${ox+x}" y="${-r*0.7}" font-size="${r*1.05}" text-anchor="middle" fill="var(--muted)">${x}</text>`; }
+    const rh = rowH(f);
+    for(let i=1; i<=f.reihen; i++){
+      const y0 = (i-1)*rh, yc = y0 + rh/2;
+      const free = isFreeRow(f, i);
+      if(free){
+        g += `<rect x="${ox}" y="${y0}" width="${fw}" height="${rh}" fill="var(--fallow)"/>`;
+        g += `<rect x="${ox}" y="${y0}" width="${fw}" height="${rh}" fill="url(#hatch)"/>`;
+      } else if(i%2===0) g += `<rect x="${ox}" y="${y0}" width="${fw}" height="${rh}" fill="var(--grid)" opacity="0.45"/>`;
+      if(i>1) g += `<line x1="${ox}" y1="${y0}" x2="${ox+fw}" y2="${y0}" stroke="var(--grid-strong)" stroke-width="0.08"/>`;
+      if(!free) g += `<line x1="${ox}" y1="${yc}" x2="${ox+fw}" y2="${yc}" stroke="var(--grid-strong)" stroke-width="0.1" stroke-dasharray="0.6 0.5"/>`;
+      g += `<text x="${ox+fw+r*0.5}" y="${yc+r*0.38}" font-size="${r*1.0}" font-weight="600" fill="var(--muted)" opacity="${free?0.5:1}">R${i}</text>`;
+    }
+    for(let y=0; y<=fl+0.001; y+=10) g += `<text x="${ox-r*0.5}" y="${y+r*0.4}" font-size="${r*0.95}" text-anchor="end" fill="var(--muted)">${y}</text>`;
+    g += `<text x="${ox+fw/2}" y="${-r*2.4}" font-size="${r*1.45}" font-weight="700" text-anchor="middle" fill="var(--ink)">${esc(f.name)}</text>`;
+    g += `<text x="${ox+fw/2}" y="${fl + r*1.9}" font-size="${r*1.0}" text-anchor="middle" fill="var(--muted)">${kg(fw)} × ${kg(fl)} m · ${kg(fw*fl)} m²</text>`;
+  });
+  const ox = Object.fromEntries(lay.map(f => [f.id, f.ox]));
+  let m = "";
+  trees.filter(isPlaced).sort(byNr).forEach(t => {
+    const st = status(t), cx = ox[t.flaeche] + Number(t.x), cy = Number(t.y);
+    const sel = sheetState && sheetState.id === t.id;
+    m += `<g data-id="${esc(t.id)}" style="cursor:pointer">
+      ${sel?`<circle cx="${cx}" cy="${cy}" r="${r*1.8}" fill="none" stroke="var(--ink)" stroke-width="${r*0.2}"/>`:""}
+      <circle cx="${cx}" cy="${cy}" r="${r*1.25}" fill="${statusColor(st)}" stroke="var(--surface)" stroke-width="${r*0.22}"/>
+      <text x="${cx}" y="${cy + r*0.42}" font-size="${r*1.15}" font-weight="700" text-anchor="middle" fill="#fff" style="pointer-events:none">${esc(t.nr)}</text>
+    </g>`;
+  });
+  if(placing && placing.x != null && ox[placing.flaeche] != null){
+    m += `<circle cx="${ox[placing.flaeche] + placing.x}" cy="${placing.y}" r="${r*1.25}" fill="none" stroke="var(--ink)" stroke-width="${r*0.25}" stroke-dasharray="${r*0.5} ${r*0.35}"/>`;
+  }
+  const vb = `${-padL} ${-padT} ${W+padL+r*3.6} ${L+padT+padB}`;
+  const vbW = W+padL+r*3.6, vbH = L+padT+padB;
+  const wide = window.matchMedia("(min-width:768px)").matches;
+  const vEl = $("#view"), vCs = vEl ? getComputedStyle(vEl) : null;
+  const availW = vEl ? vEl.clientWidth - parseFloat(vCs.paddingLeft) - parseFloat(vCs.paddingRight) - 4 : 700;
+  const fitH = Math.min(Math.max(380, window.innerHeight - 250), availW * vbH / vbW);
+  const style = wide ? `height:${Math.round(zoom*fitH)}px;width:auto;aspect-ratio:${vbW}/${vbH}` : `width:${zoom*100}%`;
+  const defs = `<defs><pattern id="hatch" width="${r*0.9}" height="${r*0.9}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="${r*0.9}" stroke="var(--fallow-line)" stroke-width="${r*0.12}"/></pattern></defs>`;
+  return `<svg id="plan" viewBox="${vb}" style="${style}" role="img" aria-label="Lageplan: ${esc(lay.map(f => f.name+" "+f.breite+" × "+f.laenge+" m").join(", "))}">${defs}${g}${m}</svg>`;
+}
+
+function viewPlan(){
+  const counts = {due:0,soon:0,ok:0,none:0};
+  trees.forEach(t => counts[status(t)]++);
+  const unplaced = trees.filter(t => !isPlaced(t)).length;
+  return `
+  ${placing ? `<div class="placing" role="status">${placing.x!=null && plotById(placing.flaeche) ? `Baum ${esc(placing.nr||"")}: ${esc(plotName(placing.flaeche))}, Reihe ${esc(placing.reihe)}, ${kg(placing.x)} m.` : `Tippe auf die Reihe, in der Baum ${esc(placing.nr||"")} steht.`}<button id="donePlace">${placing.x!=null?"Übernehmen":"Abbrechen"}</button></div>` : ""}
+  <div class="planbox">
+    <div class="planscroll" id="planscroll">${planSVG()}</div>
+    <div class="plantools">
+      <div class="legend">
+        <span><i class="dot" style="background:var(--due)"></i>überfällig ${counts.due}</span>
+        <span><i class="dot" style="background:var(--soon)"></i>bald ${counts.soon}</span>
+        <span><i class="dot" style="background:var(--ok)"></i>im Plan ${counts.ok}</span>
+        <span><i class="dot" style="background:var(--none)"></i>offen ${counts.none}</span>
+        ${garden.flaechen.some(f => (f.freieReihen||[]).length) ? `<span><i class="dot" style="background:var(--fallow);border:1px solid var(--fallow-line);border-radius:2px"></i>nicht bepflanzt</span>` : ""}
+      </div>
+      <span class="spacer"></span>
+      <button class="btn small" data-zoom="-1" aria-label="Verkleinern">−</button>
+      <button class="btn small" data-zoom="1" aria-label="Vergrößern">+</button>
+    </div>
+  </div>
+  ${unplaced ? `<div class="note"><span><b>${unplaced}</b> ${unplaced===1?"Baum ist":"Bäume sind"} noch nicht auf dem Plan eingezeichnet.</span><button class="btn small" data-goto="baeume">Anzeigen</button></div>` : ""}
+  <p class="hint">Tippe auf einen Baum für Details. Zum Einzeichnen öffne einen Baum und wähle „Auf Plan setzen“. Beim Einzeichnen rastet der Baum auf der Mitte der angetippten Reihe ein, die Reihennummer wird automatisch übernommen.</p>`;
+}
+
+/* ---------- Liste ---------- */
+function treeItem(t, right){
+  const st = status(t);
+  return `<button class="item" data-open="${esc(t.id)}">
+    <span class="num" style="background:${statusColor(st)}">${esc(t.nr)}</span>
+    <span class="t"><strong>${esc(t.art||"Baum")}${t.sorte?" · "+esc(t.sorte):""}</strong><small>${esc([lageText(t), t.wuchs, t.pflanzjahr?"gepflanzt "+t.pflanzjahr:"", schutzAktiv(t).length?"Schutz: "+[...new Set(schutzAktiv(t).map(m=>m.art))].join(", "):""].filter(Boolean).join(" · ")||"Keine weiteren Angaben")}</small></span>
+    ${right ?? `<span class="pill ${st}">${esc(dueText(t))}</span>`}
+  </button>`;
+}
+function treeListHTML(){
+  const q = query.trim().toLowerCase();
+  const list = trees.filter(t => (artFilter==="Alle" || t.art===artFilter) && (plotFilter==="Alle" || (plotFilter==="none" ? !isPlaced(t) : t.flaeche===plotFilter && isPlaced(t))) && (!q || [t.nr,t.art,t.sorte,t.notiz].join(" ").toLowerCase().includes(q))).sort(byNr);
+  return list.length ? `<div class="list">${list.map(t => treeItem(t, (!isPlaced(t)?`<span class="pill none">ohne Platz</span>`:null))).join("")}</div>`
+    : `<div class="empty">${trees.length ? "Keine Bäume passen zur Suche." : "Noch keine Bäume erfasst. Tippe auf <b>+</b>, um den ersten Baum anzulegen."}</div>`;
+}
+function viewBaeume(){
+  const arten = ["Alle", ...ARTEN.filter(a => trees.some(t => t.art === a))];
+  return `
+  <input class="search" id="q" type="search" placeholder="Suchen: Nummer, Sorte, Notiz …" value="${esc(query)}" autocomplete="off">
+  <div class="chips">${[["Alle","Alle Flächen"], ...garden.flaechen.map(f => [f.id, f.name]), ...(trees.some(t => !isPlaced(t)) ? [["none","Ohne Platz"]] : [])].map(([id,n]) => `<button class="chip" data-plot="${esc(id)}" aria-pressed="${id===plotFilter}">${esc(n)}</button>`).join("")}</div>
+  <div class="chips">${arten.map(a => `<button class="chip" data-art="${esc(a)}" aria-pressed="${a===artFilter}">${esc(a)}${a!=="Alle"?" "+trees.filter(t=>t.art===a).length:""}</button>`).join("")}</div>
+  <div id="treelist">${treeListHTML()}</div>`;
+}
+
+/* ---------- Schnitt ---------- */
+/* Wann eine Maßnahme typischerweise ansteht (Monate). Spritzung nur bei Bedarf, daher ohne Zeitfenster. */
+/* Nur Maßnahmen, die je Baum gemacht werden; Nistkasten oder Wühlmauskontrolle betreffen eher den ganzen Garten. */
+const SCHUTZ_SAISON = {"Leimring":[9,10],"Pheromonfalle":[5,6],"Stammanstrich (Weißeln)":[11,12]};
+const SCHUTZ_KURZ = {"Stammanstrich (Weißeln)":"Weißeln","Netz / Vlies":"Netz","Nützlinge / Nistkasten":"Nistkasten"};
+const kurz = a => SCHUTZ_KURZ[a] || a;
+function saisonFuer(art, obstGruppe){
+  if(art === "Netz / Vlies") return obstGruppe === "kirsche" ? [5,6] : [8,9];
+  return SCHUTZ_SAISON[art] || null;
+}
+function pflegeInfo(t){
+  const st = status(t);
+  const aktiv = schutzAktiv(t);
+  const fr = (t.schutz||[]).filter(m => m.bis && !m.erledigt).map(m => ({m, d: daysUntil(m.bis)}));
+  const offen = fr.filter(x => x.d <= 30).sort((a,b) => a.d - b.d);
+  const monat = new Date().getMonth() + 1, gruppe = SCHUTZ_GRUPPE[t.art] || "alle";
+  const {empf} = schutzFuer(t.art || "Sonstige");
+  const kuerzlich = art => (t.schutz||[]).some(m => m.art === art && daysSince(m.datum) <= 200);
+  const jetzt = gruppe === "alle" ? [] : empf.filter(a => { const w = saisonFuer(a, gruppe); return w && w.includes(monat) && !kuerzlich(a); });
+  const score = (st === "due" ? 3 : st === "soon" ? 1 : 0) + offen.reduce((n,x) => n + (x.d < 0 ? 3 : 1), 0);
+  return {st, aktiv, offen, jetzt, score};
+}
+let pflegeFilter = "alle", pflegeSort = "dring";
+function viewSchnitt(){
+  if(!trees.length) return `<div class="empty">Noch keine Bäume erfasst.</div>`;
+  const infos = trees.map(t => ({t, ...pflegeInfo(t)}));
+  const cntDue = infos.filter(i => i.st === "due").length, cntSoon = infos.filter(i => i.st === "soon").length;
+  const cntFr = infos.reduce((n,i) => n + i.offen.length, 0), cntJetzt = infos.filter(i => i.jetzt.length).length;
+  const bedarf = infos.filter(i => i.score > 0).length;
+  let list = infos.filter(i => (pflegeFilter === "alle" || i.score > 0) && (plotFilter === "Alle" || (plotFilter === "none" ? !isPlaced(i.t) : i.t.flaeche === plotFilter)));
+  list.sort(pflegeSort === "nr" ? (a,b) => byNr(a.t, b.t) : (a,b) => b.score - a.score || b.jetzt.length - a.jetzt.length || (nextCut(a.t)||"9999").localeCompare(nextCut(b.t)||"9999") || byNr(a.t, b.t));
+  const fmtFrist = d => d < 0 ? `seit ${-d} T.` : d === 0 ? "heute" : `in ${d} T.`;
+  const row = i => {
+    const t = i.t;
+    const schutzChips = [
+      ...i.offen.map(x => `<span class="sch ${x.d < 0 ? "due" : "soon"}">${picto(x.m.art, 18)}${esc(kurz(x.m.art))} · ${fmtFrist(x.d)}</span>`),
+      ...i.aktiv.filter(m => !i.offen.some(x => x.m.id === m.id)).map(m => `<span class="sch ok">${picto(m.art, 18)}${esc(kurz(m.art))}${m.mittel ? ` (${esc(m.mittel)})` : ""}${m.bis ? ` bis ${fmtDate(m.bis).slice(0,6)}` : ""}</span>`),
+      ...i.jetzt.map(a => `<span class="sch todo">${picto(a, 18)}${esc(kurz(a))}?</span>`)
+    ];
+    return `<button class="prow" data-open="${esc(t.id)}">
+      <span class="pc pbaum"><span class="num" style="background:${statusColor(i.st)}">${esc(t.nr)}</span>
+        <span class="t"><strong>${esc(t.art||"Baum")}${t.sorte ? " · " + esc(t.sorte) : ""}</strong><small>${esc(lageText(t) || "ohne Platz")}</small></span></span>
+      <span class="pc pschnitt"><span class="plabel">Schnitt</span>
+        <span class="pill ${i.st}">${esc(dueText(t))}</span>
+        <small>${t.letzterSchnitt ? `zuletzt ${fmtDate(t.letzterSchnitt)}` : "noch kein Schnitt"} · alle ${t.intervall || 12} Mon.</small></span>
+      <span class="pc pschutz"><span class="plabel">Pflanzenschutz</span>
+        ${schutzChips.length ? `<span class="schs">${schutzChips.join("")}</span>` : `<small>nichts aktiv</small>`}</span>
+    </button>`;
+  };
+  return `
+  <div class="stats stats4">
+    <div class="stat"><div class="v" style="color:${cntDue?"var(--due)":"inherit"}">${cntDue}</div><div class="l">Schnitt überfällig</div></div>
+    <div class="stat"><div class="v" style="color:${cntSoon?"var(--soon)":"inherit"}">${cntSoon}</div><div class="l">Schnitt in 60 Tagen</div></div>
+    <div class="stat"><div class="v" style="color:${cntFr?"var(--soon)":"inherit"}">${cntFr}</div><div class="l">Pflanzenschutz-Fristen</div></div>
+    <div class="stat"><div class="v">${cntJetzt}</div><div class="l">Bäume mit Vorschlag zur Jahreszeit</div></div>
+  </div>
+  <div class="row" style="gap:8px">
+    <div class="seg" role="group" aria-label="Filter"><button data-pfilter="alle" aria-pressed="${pflegeFilter==="alle"}">Alle Bäume</button><button data-pfilter="bedarf" aria-pressed="${pflegeFilter==="bedarf"}">Handlungsbedarf ${bedarf}</button></div>
+    <div class="seg" role="group" aria-label="Sortierung"><button data-psort="dring" aria-pressed="${pflegeSort==="dring"}">Dringlichste zuerst</button><button data-psort="nr" aria-pressed="${pflegeSort==="nr"}">Nach Nummer</button></div>
+  </div>
+  ${garden.flaechen.length > 1 ? `<div class="chips">${[["Alle","Alle Flächen"], ...garden.flaechen.map(f => [f.id, f.name])].map(([id,n]) => `<button class="chip" data-plot="${esc(id)}" aria-pressed="${id===plotFilter}">${esc(n)}</button>`).join("")}</div>` : ""}
+  <div class="ptable">
+    <div class="phead2" aria-hidden="true"><span>Baum</span><span>Schnitt</span><span>Pflanzenschutz</span></div>
+    ${list.length ? list.map(row).join("") : `<div class="empty" style="border:0">Kein Baum mit Handlungsbedarf. Alles im grünen Bereich.</div>`}
+  </div>
+  <div class="legend" style="gap:14px"><span><span class="sch due" style="padding:1px 6px">rot</span> Frist abgelaufen</span><span><span class="sch soon" style="padding:1px 6px">gelb</span> Frist in 30 Tagen</span><span><span class="sch ok" style="padding:1px 6px">grün</span> aktiv</span><span><span class="sch todo" style="padding:1px 6px">gestrichelt mit ?</span> laut Jahreszeit jetzt sinnvoll</span></div>
+  <p class="hint">Nächster Schnitt = letzter Schnitt + Intervall. „Jetzt sinnvoll“ richtet sich nach Obstart und Monat und erscheint nur, wenn die Maßnahme in den letzten gut sechs Monaten nicht eingetragen wurde. Tippe auf eine Zeile, um den Baum zu öffnen.</p>`;
+}
+
+/* ---------- Ertrag ---------- */
+function barChart(years, totals, selYear = statYear, label = "Gesamtertrag je Jahr in kg"){
+  const max = Math.max(...totals, 1), W = 600, H = 220, padL = 44, padB = 28, padT = 14;
+  const step = niceStep(max), top = Math.ceil(max/step)*step;
+  const iw = W - padL - 10, ih = H - padB - padT, bw = Math.min(56, iw/years.length*0.6);
+  let s = "";
+  for(let v=0; v<=top; v+=step){ const y = padT + ih - v/top*ih; s += `<line x1="${padL}" x2="${W-10}" y1="${y}" y2="${y}" stroke="var(--line)" stroke-width="1"/><text x="${padL-6}" y="${y+4}" font-size="12" text-anchor="end" fill="var(--muted)">${v.toLocaleString("de-DE")}</text>`; }
+  years.forEach((yr,i) => {
+    const cx = padL + iw*(i+0.5)/years.length, h = totals[i]/top*ih, y = padT + ih - h, sel = yr===selYear;
+    s += `<g data-year="${yr}" style="cursor:pointer"><rect x="${cx-bw/2-6}" y="${padT}" width="${bw+12}" height="${ih+padB}" fill="transparent"/>
+      <rect x="${cx-bw/2}" y="${y}" width="${bw}" height="${Math.max(h,1)}" rx="4" fill="var(--accent)" opacity="${sel?1:0.45}"/>
+      <text x="${cx}" y="${H-8}" font-size="12.5" text-anchor="middle" fill="var(${sel?"--ink":"--muted"})" font-weight="${sel?700:400}">${yr}</text>
+      ${sel?`<text x="${cx}" y="${y-5}" font-size="12" text-anchor="middle" fill="var(--ink)" font-weight="700">${kg(totals[i])}</text>`:""}</g>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">${s}</svg>`;
+}
+/* ---------- Ernte & Verarbeitung ---------- */
+const VERARB_TYPEN = {
+  "Saft":{einheit:"l", icon:"flasche"},
+  "Most / Cidre":{einheit:"l", icon:"buegel"},
+  "Gelee":{einheit:"Gläser", icon:"gelee"},
+  "Marmelade / Konfitüre":{einheit:"Gläser", icon:"glas"},
+  "Mus / Kompott":{einheit:"Gläser", icon:"schale"},
+  "Dörrobst":{einheit:"kg", icon:"ringe"},
+  "Frisch verbraucht / verschenkt":{einheit:"kg", icon:"korb"},
+  "Sonstiges":{einheit:"Stück", icon:"korb"}
+};
+const EINHEITEN = ["l","Gläser","Flaschen","kg","Stück"];
+const batchYearOf = b => String(b.datum||"").slice(0,4);
+const FRUCHTFARBE = {"Apfel":"var(--cider)","Gemischt":"var(--cider)","Birne":"var(--f-pear)","Quitte":"var(--f-quince)","Süßkirsche":"var(--f-red)","Sauerkirsche":"var(--f-red)","Zwetschge":"var(--f-plum)","Pflaume":"var(--f-plum)","Mirabelle":"var(--f-quince)","Reneklode":"var(--f-pear)","Aprikose":"var(--f-apricot)","Pfirsich":"var(--f-apricot)","Weinrebe":"var(--f-plum)","Speierling":"var(--f-apricot)"};
+const isApfelsaft = b => b.typ === "Saft" && (!b.obst || b.obst === "Apfel" || b.obst === "Gemischt");
+function vIcon(typ, size, obst, apfel){
+  const k = (VERARB_TYPEN[typ]||{}).icon || "korb";
+  const F = FRUCHTFARBE[obst] || (k === "flasche" || k === "buegel" ? "var(--cider)" : "var(--f-red)");
+  const I = 'stroke="var(--ink)"';
+  const apple = `<circle cx="32" cy="45" r="6.5" fill="var(--f-red)"/><path d="M32 38.5 q1 -4 4 -5" fill="none" ${I} stroke-width="1.6" stroke-linecap="round"/><ellipse cx="35.5" cy="35.5" rx="2.6" ry="1.4" fill="var(--accent)" transform="rotate(-25 35.5 35.5)"/>`;
+  const P = {
+    flasche:`<path d="M27 6 H37 V16 L42 24 V56 A3 3 0 0 1 39 59 H25 A3 3 0 0 1 22 56 V24 L27 16 Z" fill="var(--glass)"/>
+      <path d="M22 30 H42 V56 A3 3 0 0 1 39 59 H25 A3 3 0 0 1 22 56 Z" fill="${F}"/>
+      <rect x="25.5" y="36" width="13" height="17" rx="2" fill="var(--picto-white)" ${I} stroke-width="1.2"/>
+      ${apfel ? apple.replace(/cy="45"/,'cy="46"').replace(/r="6.5"/,'r="4.6"').replace('M32 38.5 q1 -4 4 -5','M32 41.5 q.8 -3 3 -3.6').replace('cx="35.5" cy="35.5" rx="2.6" ry="1.4"','cx="35" cy="39" rx="2" ry="1.1"').replace('rotate(-25 35.5 35.5)','rotate(-25 35 39)') : `<path d="M28 42 H36 M28 46 H34" ${I} stroke-width="1.2" opacity=".6"/>`}
+      <rect x="26" y="3" width="12" height="5" rx="1.5" fill="var(--accent)"/>
+      <path d="M27 6 H37 V16 L42 24 V56 A3 3 0 0 1 39 59 H25 A3 3 0 0 1 22 56 V24 L27 16 Z" fill="none" ${I} stroke-width="2.5" stroke-linejoin="round"/>`,
+    buegel:`<path d="M28 10 H36 V18 L41 25 V56 A3 3 0 0 1 38 59 H26 A3 3 0 0 1 23 56 V25 L28 18 Z" fill="var(--glass)"/>
+      <path d="M23 28 H41 V56 A3 3 0 0 1 38 59 H26 A3 3 0 0 1 23 56 Z" fill="${F}"/>
+      <circle cx="29" cy="48" r="1.4" fill="var(--picto-white)"/><circle cx="34" cy="42" r="1.2" fill="var(--picto-white)"/><circle cx="31" cy="36" r="1" fill="var(--picto-white)"/><circle cx="36" cy="52" r="1.3" fill="var(--picto-white)"/>
+      <path d="M28 10 H36 V18 L41 25 V56 A3 3 0 0 1 38 59 H26 A3 3 0 0 1 23 56 V25 L28 18 Z" fill="none" ${I} stroke-width="2.5" stroke-linejoin="round"/>
+      <rect x="27" y="5" width="10" height="5" rx="2" fill="var(--picto-white)" ${I} stroke-width="1.5"/>
+      <path d="M27 8 C20 8 20 18 27 18 M37 8 C44 8 44 18 37 18" fill="none" stroke="var(--muted)" stroke-width="1.6"/>`,
+    gelee:`<path d="M16 20 H48 V52 A6 6 0 0 1 42 58 H22 A6 6 0 0 1 16 52 Z" fill="var(--glass)"/>
+      <path d="M16 28 H48 V52 A6 6 0 0 1 42 58 H22 A6 6 0 0 1 16 52 Z" fill="${F}" opacity=".75"/>
+      <path d="M21 33 C21 44 22 50 25 53" fill="none" stroke="var(--picto-white)" stroke-width="2.5" stroke-linecap="round" opacity=".8"/>
+      <rect x="13" y="12" width="38" height="9" rx="2.5" fill="var(--accent)" ${I} stroke-width="1.5"/>
+      <path d="M16 20 H48 V52 A6 6 0 0 1 42 58 H22 A6 6 0 0 1 16 52 Z" fill="none" ${I} stroke-width="2.5" stroke-linejoin="round"/>`,
+    glas:`<path d="M16 22 H48 V52 A6 6 0 0 1 42 58 H22 A6 6 0 0 1 16 52 Z" fill="${F}"/>
+      <circle cx="24" cy="44" r="2" fill="var(--ink)" opacity=".3"/><circle cx="38" cy="50" r="2.3" fill="var(--ink)" opacity=".3"/><circle cx="33" cy="36" r="1.8" fill="var(--ink)" opacity=".3"/><circle cx="41" cy="40" r="1.6" fill="var(--ink)" opacity=".3"/>
+      <path d="M16 22 H48 V52 A6 6 0 0 1 42 58 H22 A6 6 0 0 1 16 52 Z" fill="none" ${I} stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M10 22 L14 10 H50 L54 22 Z" fill="var(--cloth)" ${I} stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M18 10 L15 22 M26 10 L25 22 M34 10 L35 22 M42 10 L45 22 M12 16 H52" stroke="var(--picto-white)" stroke-width="1.6" opacity=".85"/>
+      <path d="M14 22 H50" ${I} stroke-width="2.5" stroke-linecap="round"/>`,
+    schale:`<path d="M8 32 H56 C56 46 46 56 32 56 C18 56 8 46 8 32 Z" fill="var(--picto-white)"/>
+      <path d="M10 32 C14 26 24 24 32 26 C40 24 50 26 54 32 Z" fill="${F}"/>
+      <path d="M8 32 H56 C56 46 46 56 32 56 C18 56 8 46 8 32 Z" fill="none" ${I} stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M22 58 H42" ${I} stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M40 30 L54 8" ${I} stroke-width="3" stroke-linecap="round"/><ellipse cx="38.5" cy="31" rx="4" ry="2.5" fill="var(--muted)" transform="rotate(-55 38.5 31)"/>`,
+    ringe:`<path d="M6 12 C22 20 42 20 58 12" fill="none" stroke="var(--muted)" stroke-width="1.6"/>
+      ${[[16,30],[32,34],[48,30]].map(([x,y]) => `<circle cx="${x}" cy="${y}" r="10" fill="${F}" ${I} stroke-width="2"/><circle cx="${x}" cy="${y}" r="3.5" fill="var(--picto-bg)" ${I} stroke-width="1.5"/>`).join("")}
+      ${[[22,50],[40,52]].map(([x,y]) => `<circle cx="${x}" cy="${y}" r="8" fill="${F}" ${I} stroke-width="2" opacity=".85"/><circle cx="${x}" cy="${y}" r="2.8" fill="var(--picto-bg)" ${I} stroke-width="1.5"/>`).join("")}`,
+    korb:`<path d="M10 28 H54 L48 56 H16 Z" fill="var(--soil)" opacity=".6"/><path d="M10 28 H54 L48 56 H16 Z" fill="none" ${I} stroke-width="2.5" stroke-linejoin="round"/><path d="M20 28 C20 12 44 12 44 28" fill="none" ${I} stroke-width="2.5"/><circle cx="25" cy="25" r="6" fill="var(--f-red)"/><circle cx="38" cy="24" r="6" fill="var(--accent)"/><path d="M14 40 H50 M24 28 L26 56 M40 28 L38 56" ${I} stroke-width="1.2" opacity=".5"/>`
+  };
+  return `<svg class="picto" viewBox="0 0 64 64" width="${size}" height="${size}" aria-hidden="true">${P[k]}</svg>`;
+}
+const fmtMenge = (v, e) => `${kg(Number(v)||0)} ${e==="Gläser" && Number(v)===1 ? "Glas" : e==="Flaschen" && Number(v)===1 ? "Flasche" : e}`;
+function sumBy(list, pred){ return list.filter(pred).reduce((a,b) => a + (Number(b.menge)||0), 0); }
+
+function viewErtragTab(){
+  const seg = `<div class="seg" role="group" aria-label="Ansicht"><button data-seg="uebersicht" aria-pressed="${ertragSeg==="uebersicht"}">Erzeugnisse</button><button data-seg="statistik" aria-pressed="${ertragSeg==="statistik"}">Erntestatistik</button></div>`;
+  return seg + personChips() + (ertragSeg === "statistik" ? viewErtrag() : viewErnte());
+}
+function batchRow(b){
+  const aus = b.obstKg && b.einheit === "l" ? ` · ${kg(b.menge/b.obstKg*100)} l je 100 kg` : "";
+  return `<button class="item vitem" data-batch="${esc(b.id)}"><span class="ptile">${vIcon(b.typ, 32, b.obst, isApfelsaft(b))}</span>
+    <span class="t"><strong>${esc(fmtMenge(b.menge, b.einheit))} ${esc(b.typ === "Saft" && b.obst && b.obst !== "Gemischt" ? b.obst + "saft" : b.typ)}${b.obst && !(b.typ === "Saft") ? ` · ${esc(b.obst)}` : b.obst === "Gemischt" ? " · gemischt" : ""}</strong>
+    <small>${fmtDate(b.datum)}${b.ort?` · ${esc(b.ort)}`:""}${b.obstKg?` · aus ${kg(b.obstKg)} kg`:""}${aus}${byLine(b.by)}</small></span><span></span></button>`;
+}
+function viewErnte(){
+  const years = [...new Set([...batches.map(batchYearOf), ...yieldYears()])].filter(Boolean).sort();
+  const thisYear = String(new Date().getFullYear());
+  if(!years.includes(thisYear)) years.push(thisYear);
+  if(!batchYear || !years.includes(batchYear)) batchYear = thisYear;
+  const yb = batches.filter(b => batchYearOf(b) === batchYear && passPerson(b.by)).sort((a,b) => String(b.datum).localeCompare(String(a.datum)));
+  const saft = yb.filter(isApfelsaft), andere = yb.filter(b => !isApfelsaft(b));
+  const saftL = sumBy(saft, b => b.einheit === "l");
+  const saftKg = saft.reduce((a,b) => a + (Number(b.obstKg)||0), 0);
+  const saftMitKg = saft.filter(b => b.obstKg > 0 && b.einheit === "l");
+  const ausbeute = saftMitKg.length ? sumBy(saftMitKg, () => true) / saftMitKg.reduce((a,b) => a + Number(b.obstKg), 0) * 100 : null;
+  const glaeser = sumBy(yb, b => b.einheit === "Gläser");
+  const geerntet = trees.reduce((a,t) => a + yieldOf(t, batchYear), 0);
+  const weinL = casks.filter(c => String(c.angesetzt||"").startsWith(batchYear) && passPerson(c.by)).reduce((a,c) => a + (Number(c.menge)||0), 0);
+  const fb = batches.filter(b => passPerson(b.by));
+  const saftYears = years.filter(y => fb.some(b => batchYearOf(b) === y && isApfelsaft(b)));
+  const saftTotals = saftYears.map(y => sumBy(fb, b => batchYearOf(b) === y && isApfelsaft(b) && b.einheit === "l"));
+  const prevIdx = saftYears.indexOf(batchYear) - 1, prevL = prevIdx >= 0 ? saftTotals[prevIdx] : null;
+  // andere Erzeugnisse nach Typ (+Einheit) bündeln
+  const groups = {};
+  andere.forEach(b => { const k = b.typ + "|" + b.einheit; groups[k] ??= {typ:b.typ, einheit:b.einheit, menge:0, n:0, obst:new Set()}; groups[k].menge += Number(b.menge)||0; groups[k].n++; if(b.obst) groups[k].obst.add(b.obst); });
+  const glist = Object.values(groups).sort((a,b) => Object.keys(VERARB_TYPEN).indexOf(a.typ) - Object.keys(VERARB_TYPEN).indexOf(b.typ));
+  return `
+  <div class="chips">${years.map(y => `<button class="chip" data-byear="${y}" aria-pressed="${y===batchYear}">${y}</button>`).join("")}</div>
+  <div class="stats stats4">
+    <div class="stat"><div class="v">${kg(geerntet)}</div><div class="l">kg geerntet ${batchYear}</div></div>
+    <div class="stat"><div class="v">${kg(saftL)}</div><div class="l">Liter Apfelsaft</div></div>
+    <div class="stat"><div class="v">${kg(glaeser)}</div><div class="l">Gläser Eingemachtes</div></div>
+    <div class="stat"><div class="v">${kg(weinL)}</div><div class="l">Liter Apfelwein angesetzt</div></div>
+  </div>
+  <div class="cols">
+    <section class="card prod">
+      <div class="phead"><span class="ptile big">${vIcon("Saft", 64, "Apfel", true)}</span>
+        <div class="pt"><span class="eyebrow">Apfelsaft ${batchYear}</span>
+          <div class="pbig">${kg(saftL)}<span> Liter</span></div>
+          <div class="psub">${saft.length ? `${saft.length} ${saft.length===1?"Pressung":"Pressungen"}${saftKg?` · aus ${kg(saftKg)} kg Äpfeln`:""}` : "noch nicht gepresst"}${prevL!=null ? ` · <span class="${saftL>=prevL?"up":"down"}">${saftL>=prevL?"+":""}${prevL?Math.round((saftL-prevL)/prevL*100):0} %</span> ggü. ${saftYears[prevIdx]}` : ""}</div>
+          ${ausbeute ? `<div class="psub">Ø Ausbeute <b>${kg(ausbeute)} l</b> je 100 kg</div>` : ""}
+        </div>
+      </div>
+      ${saft.length ? `<div class="list" style="border:0">${saft.map(batchRow).join("")}</div>` : `<p class="hint" style="margin:0">Tippe auf <b>+</b> und wähle „Saft“, um die gepressten Liter einzutragen.</p>`}
+      ${saftYears.length > 1 ? `<div class="chart"><span class="eyebrow">Liter je Jahr</span>${barChart(saftYears, saftTotals, batchYear, "Apfelsaft je Jahr in Litern")}</div>` : ""}
+    </section>
+    <section class="card">
+      <span class="eyebrow">Weitere Erzeugnisse ${batchYear}</span>
+      ${glist.length ? `<div class="ptiles">${glist.map(g => `<div class="ptile2"><span class="ptile">${vIcon(g.typ, 46, g.obst.size === 1 ? [...g.obst][0] : null)}</span>
+          <b>${esc(fmtMenge(g.menge, g.einheit))}</b><span>${esc(g.typ)}</span><small>${g.obst.size ? esc([...g.obst].join(", ")) : ""}</small></div>`).join("")}</div>
+        <div class="list" style="border:0">${andere.map(batchRow).join("")}</div>`
+        : `<div class="ptiles muted">${["Gelee","Marmelade / Konfitüre","Mus / Kompott","Most / Cidre","Dörrobst"].map(t => `<div class="ptile2"><span class="ptile">${vIcon(t, 46)}</span><span>${esc(t)}</span></div>`).join("")}</div>
+          <p class="hint" style="margin:0">Noch nichts eingetragen. Über <b>+</b> erfasst du Gelee, Marmelade, Mus, Most, Dörrobst und mehr.</p>`}
+    </section>
+  </div>`;
+}
+
+function sheetBatch(d, isNew){
+  const typOpts = Object.keys(VERARB_TYPEN).map(k => `<option ${k===d.typ?"selected":""}>${esc(k)}</option>`).join("");
+  const obstOpts = ["", "Gemischt", ...ARTEN.filter(a => a !== "Sonstige")].map(a => `<option value="${esc(a)}" ${a===(d.obst||"")?"selected":""}>${a?esc(a):"–"}</option>`).join("");
+  return `
+  <div class="sheethead"><div class="wrap"><button class="linkbtn" data-close>Abbrechen</button><h2>${isNew?"Neuer Eintrag":"Eintrag bearbeiten"}</h2><button class="linkbtn" form="batchForm" type="submit">Sichern</button></div></div>
+  <div class="wrap body">
+    <div class="hero"><span class="ptile" id="b_icon">${vIcon(d.typ, 52, d.obst, isApfelsaft(d))}</span><div class="t"><strong>Ernte &amp; Verarbeitung</strong><span>Saft, Gelee, Marmelade und mehr festhalten</span></div></div>
+    <form id="batchForm" class="form">
+      <div class="field"><label for="b_typ">Erzeugnis</label><select id="b_typ">${typOpts}</select></div>
+      <div class="field"><label for="b_datum">Datum</label><input id="b_datum" type="date" required value="${esc(d.datum)}"></div>
+      <div class="field"><label for="b_menge">Menge</label><input id="b_menge" type="number" inputmode="decimal" min="0" step="0.1" required value="${esc(d.menge ?? "")}" placeholder="z. B. 120"></div>
+      <div class="field"><label for="b_einheit">Einheit</label><select id="b_einheit">${EINHEITEN.map(e => `<option ${e===d.einheit?"selected":""}>${e}</option>`).join("")}</select></div>
+      <div class="field"><label for="b_obst">Obst</label><select id="b_obst">${obstOpts}</select></div>
+      <div class="field"><label for="b_kg">Obst eingesetzt (kg)</label><input id="b_kg" type="number" inputmode="decimal" min="0" step="0.1" value="${esc(d.obstKg ?? "")}" placeholder="optional"></div>
+      <div class="field full"><label for="b_ort">Wo verarbeitet</label><input id="b_ort" value="${esc(d.ort||"")}" placeholder="z. B. selbst, Kelterei, Lohnmosterei"></div>
+      <div class="field full"><label for="b_notiz">Notiz</label><textarea id="b_notiz" placeholder="z. B. 24 × Bag-in-Box 5 l, Sorten Boskoop und Bohnapfel">${esc(d.notiz||"")}</textarea></div>
+      <p class="hint full" style="margin:0">Mit „Obst eingesetzt“ berechnet die App beim Saft die Ausbeute in Litern je 100 kg.</p>
+    </form>
+    ${!isNew?`<button class="btn danger" id="delBatch" data-armed="0">Eintrag löschen</button>`:""}
+  </div>`;
+}
+function sheetLog(){
+  const f = sheetState.filter || "alle";
+  const ids = [...new Set(protokoll.map(l => l.by || UNBEKANNT))];
+  const list = protokoll.filter(l => f === "alle" || (l.by || UNBEKANNT) === f);
+  const fmtTs = iso => { try{ const d = new Date(iso); return d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"}) + ", " + d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}) + " Uhr"; }catch(_){ return ""; } };
+  return `
+  <div class="sheethead"><div class="wrap"><button class="linkbtn" data-close>Schließen</button><h2>Änderungsverlauf</h2></div></div>
+  <div class="wrap body">
+    ${ids.length > 1 ? `<div class="chips pchips"><button class="chip" data-logp="alle" aria-pressed="${f==="alle"}">Alle</button>${ids.map(id => `<button class="chip" data-logp="${esc(id)}" aria-pressed="${f===id}">${id===UNBEKANNT?"":avatar(id,18)}${esc(id===UNBEKANNT?"Ohne Angabe":personName(id))}</button>`).join("")}</div>` : ""}
+    ${list.length ? `<div class="loglist">${list.map(l => `<div class="logitem">${avatar(l.by, 28)}<div><b>${esc(personName(l.by))}</b><p>${esc(l.text)}</p><small>${fmtTs(l.at)}</small></div></div>`).join("")}</div>`
+      : `<div class="empty">Noch keine Änderungen protokolliert. Ab jetzt wird jede Eintragung mit Person und Zeitpunkt festgehalten.</div>`}
+    <p class="hint">Gezeigt werden die letzten ${protokoll.length >= 300 ? "300" : protokoll.length} Änderungen.</p>
+  </div>`;
+}
+function openBatch(b){
+  const isNew = !b;
+  const draft = b ? {...b} : {typ:"Saft", einheit:"l", datum: todayISO(), menge:null, obst:"Apfel", obstKg:null, ort:"", notiz:""};
+  sheetState = {mode:"batch", id: b ? b.id : null, draft, isNew, dirtyRender:true};
+  render();
+}
+
+/* ---------- Apfelwein ---------- */
+const addDays = (iso, n) => { const [y,m,d] = iso.split("-").map(Number); const dt = new Date(y, m-1, d + Number(n)); return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0"); };
+const daysSince = iso => -daysUntil(iso);
+const HEFEN = ["Reinzuchthefe","Spontangärung"];
+const KLAER = ["Von selbst (Zeit / Kälte)","Schönung (z. B. Kieselsol / Gelatine)","Filtration","Sonstiges"];
+/* Faustwerte: Hauptgärung ca. 3–4 Wochen bei 16–20 °C, kühler länger; Nachgärung ca. 3–4 Wochen */
+function ciderPlan(c){
+  const T = Number(c.temp) || 16;
+  const mainDays = Math.max(14, Math.min(60, Math.round(25 * Math.pow(2, (17 - T) / 8))));
+  const mainEnd = addDays(c.angesetzt, mainDays);
+  const abstichDue = addDays(mainEnd, 25);
+  const trink = addDays(c.abstich || abstichDue, 21);
+  return {mainDays, mainEnd, abstichDue, trink};
+}
+const lastOe = c => { const m = (c.messungen||[]).filter(x => x.oe != null && x.oe !== "").sort((a,b) => a.datum.localeCompare(b.datum)); return m.length ? Number(m[m.length-1].oe) : null; };
+function oeStable(c){
+  const m = (c.messungen||[]).filter(x => x.oe != null && x.oe !== "").sort((a,b) => a.datum.localeCompare(b.datum));
+  if(m.length < 2) return false;
+  const a = m[m.length-2], b = m[m.length-1];
+  return Math.abs(Number(a.oe) - Number(b.oe)) <= 1 && daysUntil(b.datum) <= 0 && (daysSince(a.datum) - daysSince(b.datum)) >= 6;
+}
+function ciderPhase(c){
+  const p = ciderPlan(c);
+  if(c.abgefuellt) return {key:"abgefuellt", label:"Abgefüllt", sub: c.flaschen ? `${c.flaschen} Flaschen` : fmtDate(c.abgefuellt), pill:"none", prog:1};
+  if(c.geklaert) return {key:"klar", label:"Geklärt", sub:"bereit zum Abfüllen, wenn durchgegoren", pill:"ok", prog:.95};
+  if(c.abstich) return {key:"nach", label:"Abgestochen, klärt", sub:`seit ${daysSince(c.abstich)} Tagen`, pill:"ok", prog:.85};
+  const total = daysSince(c.angesetzt), span = Math.max(1, -daysSince(p.abstichDue) + total);
+  const prog = Math.max(0.03, Math.min(.8, total / span * .8));
+  const oe = lastOe(c);
+  const dMain = daysUntil(p.mainEnd);
+  if(dMain > 0 && !(oe != null && oe <= 2)) return {key:"gaerung", label: total <= 7 ? "Stürmische Gärung" : "Hauptgärung", sub:`noch ca. ${dMain} Tage`, pill:"soon", prog};
+  const dA = daysUntil(p.abstichDue);
+  if(dA > 0 && !oeStable(c)) return {key:"nachgaerung", label:"Nachgärung", sub:`Abstich in ca. ${dA} Tagen`, pill:"soon", prog};
+  return {key:"abstich", label:"Abstich fällig", sub:"vom Hefedepot abziehen", pill:"due", prog:.8};
+}
+function alcohol(c){
+  const s0 = Number(c.oechsle); if(!(s0 > 0)) return null;
+  const oe = lastOe(c);
+  return {jetzt: oe != null ? Math.max(0, (s0 - oe) * 0.131) : null, moeglich: s0 * 0.131};
+}
+function cider(c, size, uidp){
+  const ph = c ? ciderPhase(c) : {key:"gaerung"};
+  const frac = c ? Math.max(0, Math.min(1, (Number(c.menge)||0) / (Number(c.volumen)||1))) : .75;
+  const top = 40, bottom = 112, lvl = ph.key === "abgefuellt" ? bottom : bottom - frac * (bottom - top);
+  const id = "cb" + (uidp || Math.random().toString(36).slice(2,8));
+  const body = "M30 38 L30 30 L50 30 L50 38 C68 44 74 58 74 76 C74 100 62 112 40 112 C18 112 6 100 6 76 C6 58 12 44 30 38 Z";
+  const active = ph.key === "gaerung" || ph.key === "nachgaerung";
+  const trueb = ph.key !== "klar" && ph.key !== "nach";
+  const liquidCol = trueb ? "var(--cider-trub)" : "var(--cider)";
+  let inner = `<rect x="0" y="${lvl}" width="80" height="${bottom - lvl + 2}" fill="${liquidCol}" opacity="${trueb ? .9 : 1}"/>`;
+  if(trueb && ph.key !== "abgefuellt") inner += [ [20,90],[48,98],[34,80],[58,84],[26,102],[52,72] ].filter(([,y]) => y > lvl + 3).map(([x,y]) => `<circle cx="${x}" cy="${y}" r="1.4" fill="var(--soil)" opacity=".8"/>`).join("");
+  if(ph.key === "gaerung" && c && daysSince(c.angesetzt) <= 10) inner += Array.from({length:7}, (_,i) => `<circle cx="${12 + i*9.5}" cy="${lvl}" r="${3 + (i%2)}" fill="var(--picto-white)" opacity=".9"/>`).join("");
+  if(!c || (!c.abstich && ph.key !== "abgefuellt")) inner += `<ellipse cx="40" cy="110" rx="22" ry="4" fill="var(--soil)"/>`;
+  if(active) inner += `<circle class="rise" cx="30" cy="104" r="1.6" fill="var(--picto-white)"/><circle class="rise d2" cx="44" cy="100" r="1.3" fill="var(--picto-white)"/><circle class="rise d3" cx="54" cy="106" r="1.5" fill="var(--picto-white)"/>`;
+  const airlock = ph.key === "abgefuellt" ? "" : `
+    <path d="M40 24 V17" stroke="var(--ink)" stroke-width="2"/>
+    <rect x="31" y="1" width="18" height="16" rx="4" fill="var(--glass)" stroke="var(--ink)" stroke-width="2"/>
+    <rect x="33" y="9" width="14" height="6.5" rx="2" fill="var(--accent)" opacity=".45"/>
+    <path d="M40 -1 V12" stroke="var(--ink)" stroke-width="1.6"/>
+    <rect x="30" y="-3" width="20" height="3.5" rx="1.5" fill="var(--ink)"/>
+    ${active ? `<circle class="bub" cx="37" cy="12" r="1.6" fill="var(--picto-white)"/><circle class="bub d2" cx="43" cy="12" r="1.3" fill="var(--picto-white)"/>` : ""}`;
+  return `<svg class="picto" viewBox="0 -4 80 118" width="${size}" height="${Math.round(size*118/80)}" aria-hidden="true">
+    <defs><clipPath id="${id}"><path d="${body}"/></clipPath></defs>
+    <path d="${body}" fill="var(--glass)"/>
+    <g clip-path="url(#${id})">${inner}</g>
+    <path d="${body}" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M15 70 C15 60 19 52 26 48" fill="none" stroke="var(--picto-white)" stroke-width="3" stroke-linecap="round" opacity=".7"/>
+    ${ph.key === "abgefuellt" ? "" : `<rect x="27" y="23" width="26" height="9" rx="2.5" fill="var(--cork)" stroke="var(--ink)" stroke-width="1.5"/>`}
+    ${airlock}
+  </svg>`;
+}
+
+const LEITFADEN = [
+  ["Saft","Frisch gepresst aus reifen, gesunden Äpfeln. Eine Mischung mit säuerlichen Sorten (z. B. Bohnapfel, Boskoop) schmeckt am besten. Traditionell in Hessen: ein kleiner Anteil Speierlingssaft für Gerbstoff, bessere Klärung und Haltbarkeit. Mostgewicht mit Mostwaage oder Refraktometer messen und eintragen."],
+  ["Sauberkeit","Behälter, Gärspund, Schläuche und Heber gründlich reinigen und desinfizieren. Die meisten Fehler entstehen durch Keime und Luft."],
+  ["Ansetzen","Behälter nur zu etwa 3/4 bis 4/5 füllen, damit der Gärschaum nicht überläuft. Reinzuchthefe (Weißwein- oder Cidrehefe) nach Packung zugeben, das ist sicherer als Spontangärung. Gärröhrchen mit Wasser füllen."],
+  ["Hauptgärung","Ideal sind etwa 16–20 °C, kühler dauert es länger. Nach 1–3 Tagen beginnt die stürmische Gärung, die Hauptgärung dauert etwa 3–4 Wochen. Mostgewicht ungefähr wöchentlich messen."],
+  ["Auffüllen","Sobald die stürmische Gärung vorbei ist, den Behälter spundvoll auffüllen (mit Saft oder Apfelwein). Wenig Luft schützt vor Essigstich und Kahmhefe."],
+  ["Nachgärung & Abstich","Die Nachgärung dauert noch etwa 3–4 Wochen. Wenn das Gärröhrchen kaum noch blubbert und das Mostgewicht stabil bleibt, den Wein mit einem Schlauch vom Hefedepot abziehen (Abstich). Der erste Abstich ist für die Qualität entscheidend. Danach wieder spundvoll lagern; leicht schwefeln nach Packungsangabe schützt vor Braunfärbung."],
+  ["Klären","Kühl lagern, Trub setzt sich über Wochen ab. Bei Bedarf ein zweiter Abstich oder Schönung (z. B. Kieselsol und Gelatine)."],
+  ["Abfüllen","Erst abfüllen, wenn der Wein vollständig durchgegoren ist: Mostgewicht über mindestens eine Woche unverändert, um 0 °Oe oder darunter. Sonst baut sich in der Flasche Druck auf. Kühl und dunkel lagern."]
+];
+const FEHLER = [
+  ["Riecht nach Essig","Essigstich durch Luftkontakt. Behälter immer spundvoll halten."],
+  ["Weißer Film auf der Oberfläche","Kahmhefe durch Luft. Abschöpfen, Behälter auffüllen, ggf. schwefeln."],
+  ["Riecht nach faulen Eiern","Böckser: Hefe hat zu wenig Nährstoffe oder liegt zu lange. Zügig abstechen und dabei belüften."],
+  ["Wird braun","Oxidation. Weniger Luft, leicht schwefeln."],
+  ["Gärung startet nicht","Zu kalt oder keine aktive Hefe. Wärmer stellen, Reinzuchthefe zugeben."]
+];
+function leitfadenHTML(open){
+  return `<details class="card leit"${open?" open":""}><summary>Leitfaden: Apfelwein Schritt für Schritt</summary>
+    <ol>${LEITFADEN.map(([h,t]) => `<li><b>${esc(h)}</b>${esc(t)}</li>`).join("")}</ol>
+    <span class="eyebrow" style="margin-top:14px;display:block">Fehler erkennen</span>
+    <div class="tablewrap"><table class="t"><tbody>${FEHLER.map(([a,b]) => `<tr><td><b>${esc(a)}</b></td><td>${esc(b)}</td></tr>`).join("")}</tbody></table></div>
+    <p class="hint">Faustwerte nach Merkblättern von Obst- und Gartenbauvereinen und der LWG Bayern. Angaben auf Hefe- und Schwefelpackungen gehen vor.</p>
+  </details>`;
+}
+function caskCard(c){
+  const ph = ciderPhase(c), p = ciderPlan(c);
+  return `<button class="cask" data-cask="${esc(c.id)}">
+    <span class="cpic">${cider(c, 76, c.id)}</span>
+    <strong>${esc(c.name||"Behälter")}</strong>
+    <small>${kg(Number(c.menge)||0)} l von ${kg(Number(c.volumen)||0)} l · ${fmtDate(c.angesetzt)}</small>
+    <span class="row" style="gap:6px"><span class="pill ${ph.pill}">${esc(ph.label)}</span></span>
+    <small>${esc(ph.sub||"")}</small>
+    ${ph.key !== "abgefuellt" ? `<span class="prog" aria-hidden="true"><span style="width:${Math.round(ph.prog*100)}%"></span></span>` : ""}
+  </button>`;
+}
+function viewWein(){
+  const aktiv = casks.filter(c => !c.abgefuellt).sort((a,b) => String(a.angesetzt).localeCompare(String(b.angesetzt)));
+  const fertig = casks.filter(c => c.abgefuellt).sort((a,b) => String(b.abgefuellt).localeCompare(String(a.abgefuellt)));
+  const literAktiv = aktiv.reduce((a,c) => a + (Number(c.menge)||0), 0);
+  const faellig = aktiv.filter(c => ciderPhase(c).key === "abstich").length;
+  return `
+  <div class="stats">
+    <div class="stat"><div class="v">${aktiv.length}</div><div class="l">Behälter angesetzt</div></div>
+    <div class="stat"><div class="v">${kg(literAktiv)}</div><div class="l">Liter im Keller</div></div>
+    <div class="stat"><div class="v" style="color:${faellig?"var(--due)":"inherit"}">${faellig}</div><div class="l">Abstich fällig</div></div>
+  </div>
+  ${aktiv.length ? `<div class="casks">${aktiv.map(caskCard).join("")}</div>`
+    : `<div class="empty">Noch kein Gärbehälter angesetzt. Tippe auf <b>+</b>, um den ersten Ballon oder das erste Fass anzulegen.</div>`}
+  ${fertig.length ? `<div class="card"><span class="eyebrow">Abgefüllt</span><div class="list" style="border:0">${fertig.map(c => `<button class="item vitem" data-cask="${esc(c.id)}"><span class="ptile">${vIcon("Most / Cidre", 32, "Apfel")}</span><span class="t"><strong>${esc(c.name)} · ${fmtDate(c.abgefuellt)}</strong><small>${c.flaschen?`${c.flaschen} Flaschen · `:""}${kg(Number(c.abfuellLiter||c.menge)||0)} l · angesetzt ${fmtDate(c.angesetzt)}</small></span><span></span></button>`).join("")}</div></div>` : ""}
+  ${leitfadenHTML(!casks.length)}`;
+}
+function oeChart(c){
+  const m = (c.messungen||[]).filter(x => x.oe != null && x.oe !== "").map(x => ({d: daysSince(c.angesetzt) - daysSince(x.datum), oe: Number(x.oe)}));
+  if(c.oechsle) m.unshift({d:0, oe:Number(c.oechsle)});
+  m.sort((a,b) => a.d - b.d);
+  if(m.length < 2) return "";
+  const W = 320, H = 130, pl = 30, pb = 20, pt = 10, pr = 10;
+  const maxD = Math.max(...m.map(x => x.d), 7), maxO = Math.max(...m.map(x => x.oe), 10), minO = Math.min(0, ...m.map(x => x.oe));
+  const X = d => pl + d / maxD * (W - pl - pr), Y = o => pt + (maxO - o) / (maxO - minO) * (H - pt - pb);
+  let g = "";
+  const step = maxO - minO > 40 ? 20 : 10;
+  for(let v = Math.ceil(minO/step)*step; v <= maxO; v += step) g += `<line x1="${pl}" x2="${W-pr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${pl-5}" y="${Y(v)+4}" font-size="10" text-anchor="end" fill="var(--muted)">${v}</text>`;
+  g += `<text x="${W-pr}" y="${H-4}" font-size="10" text-anchor="end" fill="var(--muted)">Tag ${maxD}</text><text x="${pl}" y="${H-4}" font-size="10" fill="var(--muted)">Ansatz</text>`;
+  const pts = m.map(x => `${X(x.d)},${Y(x.oe)}`).join(" ");
+  g += `<polygon points="${X(m[0].d)},${Y(minO)} ${pts} ${X(m[m.length-1].d)},${Y(minO)}" fill="var(--accent)" opacity=".12"/>`;
+  g += `<polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linejoin="round"/>`;
+  g += m.map((x,i) => `<circle cx="${X(x.d)}" cy="${Y(x.oe)}" r="${i===m.length-1?4:2.6}" fill="var(--accent)" stroke="var(--surface)" stroke-width="1.5"/>`).join("");
+  const l = m[m.length-1];
+  g += `<text x="${Math.min(X(l.d), W-pr-4)}" y="${Y(l.oe)-8}" font-size="11" font-weight="700" text-anchor="end" fill="var(--ink)">${kg(l.oe)} °Oe</text>`;
+  return `<div class="mchart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Verlauf des Mostgewichts in Grad Oechsle">${g}</svg></div>`;
+}
+function sheetCask(c){
+  const ph = ciderPhase(c), p = ciderPlan(c), alc = alcohol(c);
+  const frac = (Number(c.menge)||0) / (Number(c.volumen)||1);
+  const tage = daysSince(c.angesetzt);
+  const tips = [];
+  if(!c.abstich && tage <= 10 && frac > 0.85) tips.push("Der Behälter ist über 4/5 gefüllt. Während der stürmischen Gärung kann er überschäumen.");
+  if(!c.abstich && tage > 7 && frac < 0.95 && ph.key !== "abstich") tips.push("Die stürmische Gärung ist vorbei: Behälter jetzt spundvoll auffüllen, damit wenig Luft darüber steht.");
+  if(ph.key === "abstich") tips.push("Gärröhrchen prüfen: Blubbert es kaum noch und bleibt das Mostgewicht stabil, den Wein vom Hefedepot abziehen.");
+  if(ph.key === "nach" || ph.key === "klar") tips.push("Vor dem Abfüllen eine Woche lang das Mostgewicht beobachten. Es muss unverändert bleiben, sonst entsteht Druck in den Flaschen.");
+  if(!(c.messungen||[]).length && !c.abgefuellt) tips.push("Trage regelmäßig das Mostgewicht ein. Daran erkennst du, wann die Gärung fertig ist.");
+  const stepCls = (done, due) => done ? "done" : due ? "late" : "";
+  const ms = (c.messungen||[]).slice().sort((a,b) => b.datum.localeCompare(a.datum));
+  return `
+  <div class="sheethead"><div class="wrap"><button class="linkbtn" data-close>‹ Zurück</button><h2>${esc(c.name)}</h2><button class="linkbtn" data-caskedit="${esc(c.id)}">Bearbeiten</button></div></div>
+  <div class="wrap body">
+    <div class="hero" style="align-items:flex-end"><span class="ptile" style="padding:10px 14px 6px">${cider(c, 92, "d"+c.id)}</span>
+      <div class="t"><span class="pill ${ph.pill}">${esc(ph.label)}</span><strong style="margin-top:6px">${kg(Number(c.menge)||0)} l Apfelwein</strong><span>${esc(ph.sub||"")}</span></div></div>
+    ${c.beispiel?`<div class="note">Beispieleintrag – bearbeite oder lösche ihn.</div>`:""}
+    ${tips.map(t => `<div class="tip">${esc(t)}</div>`).join("")}
+    <div class="card"><span class="eyebrow">Ablauf</span>
+      <div class="steps">
+        <div class="step done"><span class="dot2">✓</span><div class="sb"><b>Angesetzt</b><span>${fmtDate(c.angesetzt)} · vor ${tage} Tagen${byLine(c.by)}</span></div></div>
+        <div class="step ${c.abstich || daysUntil(p.mainEnd) <= 0 ? "done" : "now"}"><span class="dot2">${c.abstich || daysUntil(p.mainEnd) <= 0 ? "✓" : ""}</span><div class="sb"><b>Hauptgärung</b><span>${c.abstich || daysUntil(p.mainEnd) <= 0 ? "vermutlich abgeschlossen" : `voraussichtlich bis ca. ${fmtDate(p.mainEnd)}`} · bei ${kg(Number(c.temp)||16)} °C etwa ${Math.round(p.mainDays/7)} Wochen</span></div></div>
+        <div class="step ${stepCls(c.abstich, !c.abstich && ph.key === "abstich")}"><span class="dot2">${c.abstich?"✓":""}</span><div class="sb"><b>Abstich</b>
+          <span>${c.abstich ? fmtDate(c.abstich) + byLine(c.abstichVon) : `fällig ab ca. ${fmtDate(p.abstichDue)}`}</span>
+          ${!c.abstich && !c.abgefuellt ? `<div class="inlineform"><button class="btn small" data-caskstep="abstich">Heute abgestochen</button></div>` : ""}</div></div>
+        <div class="step ${c.geklaert ? "done" : ""}"><span class="dot2">${c.geklaert?"✓":""}</span><div class="sb"><b>Geklärt</b>
+          <span>${c.geklaert ? `${fmtDate(c.geklaert)}${c.klaerMethode?` · ${esc(c.klaerMethode)}`:""}${byLine(c.geklaertVon)}` : "noch nicht"}</span>
+          ${!c.geklaert && !c.abgefuellt ? `<div class="inlineform"><select id="k_meth" aria-label="Klärmethode">${KLAER.map(k => `<option>${esc(k)}</option>`).join("")}</select><button class="btn small" data-caskstep="geklaert">Heute geklärt</button></div>` : ""}</div></div>
+        <div class="step ${c.abgefuellt ? "done" : ""}"><span class="dot2">${c.abgefuellt?"✓":""}</span><div class="sb"><b>Abgefüllt</b>
+          <span>${c.abgefuellt ? `${fmtDate(c.abgefuellt)}${c.flaschen?` · ${c.flaschen} Flaschen`:""}${c.abfuellLiter?` · ${kg(c.abfuellLiter)} l`:""}${byLine(c.abgefuelltVon)}` : `trinkfertig ca. ab ${fmtDate(p.trink)} (Faustwert)`}</span>
+          ${!c.abgefuellt ? `<div class="inlineform"><input id="a_fl" type="number" inputmode="numeric" min="0" placeholder="Flaschen" style="width:110px" aria-label="Anzahl Flaschen"><input id="a_l" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Liter" style="width:90px" aria-label="Abgefüllte Liter"><button class="btn small" data-caskstep="abgefuellt">Heute abgefüllt</button></div>` : ""}</div></div>
+      </div>
+    </div>
+    <div class="card"><span class="eyebrow">Mostgewicht (°Oechsle)</span>
+      ${oeChart(c)}
+      ${ms.length ? `<div class="mlist">${ms.map(x => `<div class="mitem"><div class="mt"><strong>${x.oe!==""&&x.oe!=null?kg(Number(x.oe))+" °Oe":"–"}${x.temp!=null&&x.temp!==""?` · ${kg(Number(x.temp))} °C`:""}</strong><small>${fmtDate(x.datum)}${x.notiz?` · ${esc(x.notiz)}`:""}${byLine(x.by)}</small></div><button class="x" data-mdelc="${esc(x.id)}" aria-label="Messung löschen">×</button></div>`).join("")}</div>` : `<p class="hint" style="margin:0">Noch keine Messung. Frischer Apfelsaft hat meist etwa 45–60 °Oe, durchgegorener Apfelwein um 0 °Oe oder leicht darunter.</p>`}
+      ${!c.abgefuellt ? `<form class="form" id="oeForm">
+        <div class="field"><label for="o_d">Datum</label><input id="o_d" type="date" value="${todayISO()}"></div>
+        <div class="field"><label for="o_oe">°Oechsle</label><input id="o_oe" type="number" inputmode="decimal" step="0.5" placeholder="z. B. 12"></div>
+        <div class="field"><label for="o_t">Temperatur °C</label><input id="o_t" type="number" inputmode="decimal" step="0.5" placeholder="optional"></div>
+        <div class="field"><label for="o_n">Notiz</label><input id="o_n" placeholder="z. B. blubbert langsam"></div>
+        <div class="full"><button class="btn primary" type="submit">Messung eintragen</button></div>
+      </form>` : ""}
+    </div>
+    <div class="card"><span class="eyebrow">Daten</span>
+      <dl class="kv">
+        <dt>Behälter</dt><dd>${kg(Number(c.volumen)||0)} l, zu ${Math.round(frac*100)} % gefüllt</dd>
+        <dt>Obst / Sorten</dt><dd>${esc(c.obst||"–")}${c.speierling?" · mit Speierling":""}</dd>
+        <dt>Mostgewicht Start</dt><dd>${c.oechsle?kg(Number(c.oechsle))+" °Oe":"–"}</dd>
+        <dt>Säure</dt><dd>${c.saeure?kg(Number(c.saeure))+" g/l":"–"}</dd>
+        <dt>Alkohol</dt><dd>${alc ? (alc.jetzt != null ? `ca. ${kg(alc.jetzt)} % vol bisher, ` : "") + `ca. ${kg(alc.moeglich)} % vol möglich` : "Start-Mostgewicht eintragen"}</dd>
+        <dt>Hefe</dt><dd>${esc(c.hefe||"–")}${c.hefeName?` · ${esc(c.hefeName)}`:""}</dd>
+        <dt>Zusätze</dt><dd>${esc(c.zusaetze||"–")}</dd>
+        <dt>Gärtemperatur</dt><dd>${c.temp?kg(Number(c.temp))+" °C":"–"}${c.standort?` · ${esc(c.standort)}`:""}</dd>
+      </dl>
+      <p class="hint" style="margin:0">Alkohol geschätzt über (Start-°Oe − aktuelle °Oe) × 0,131. Zeiten sind Faustwerte: Hauptgärung etwa 3–4 Wochen bei 16–20 °C, danach 3–4 Wochen Nachgärung.</p>
+    </div>
+    ${c.notiz?`<div class="card"><span class="eyebrow">Notizen</span><p style="margin:0;white-space:pre-wrap">${esc(c.notiz)}</p></div>`:""}
+  </div>`;
+}
+function sheetCaskEdit(d, isNew){
+  const opt = (arr, v) => arr.map(a => `<option ${a===v?"selected":""}>${esc(a)}</option>`).join("");
+  return `
+  <div class="sheethead"><div class="wrap"><button class="linkbtn" data-caskcancel>Abbrechen</button><h2>${isNew?"Neuer Gärbehälter":esc(d.name)}</h2><button class="linkbtn" form="caskForm" type="submit">Sichern</button></div></div>
+  <div class="wrap body">
+    <form id="caskForm" class="form">
+      <div class="field full"><label for="c_name">Bezeichnung</label><input id="c_name" required value="${esc(d.name)}" placeholder="z. B. Ballon 1, Fass 2"></div>
+      <div class="field"><label for="c_vol">Behältergröße (l)</label><input id="c_vol" type="number" inputmode="decimal" min="1" step="0.5" required value="${esc(d.volumen)}" list="c_vols"><datalist id="c_vols">${[5,10,15,25,34,54,60,120,220].map(v => `<option value="${v}">`).join("")}</datalist></div>
+      <div class="field"><label for="c_menge">Saft eingefüllt (l)</label><input id="c_menge" type="number" inputmode="decimal" min="0" step="0.5" required value="${esc(d.menge ?? "")}"></div>
+      <div class="field"><label for="c_ang">Angesetzt am</label><input id="c_ang" type="date" required value="${esc(d.angesetzt)}"></div>
+      <div class="field"><label for="c_temp">Gärtemperatur (°C)</label><input id="c_temp" type="number" inputmode="decimal" step="0.5" value="${esc(d.temp ?? 16)}"></div>
+      <div class="field full"><label for="c_obst">Obst / Sorten</label><input id="c_obst" value="${esc(d.obst||"")}" placeholder="z. B. Boskoop, Bohnapfel, Mischung von der Wiese"></div>
+      <div class="field full"><label style="display:flex;gap:8px;align-items:center;font-size:.9rem;color:var(--ink);font-weight:500"><input id="c_sp" type="checkbox" ${d.speierling?"checked":""} style="width:22px;height:22px;min-height:0"> mit Speierlingssaft</label></div>
+      <div class="field"><label for="c_oe">Mostgewicht Start (°Oe)</label><input id="c_oe" type="number" inputmode="decimal" step="0.5" value="${esc(d.oechsle ?? "")}" placeholder="z. B. 52"></div>
+      <div class="field"><label for="c_s">Säure (g/l)</label><input id="c_s" type="number" inputmode="decimal" step="0.1" value="${esc(d.saeure ?? "")}" placeholder="optional"></div>
+      <div class="field"><label for="c_hefe">Hefe</label><select id="c_hefe">${opt(HEFEN, d.hefe)}</select></div>
+      <div class="field"><label for="c_hn">Hefe-Sorte</label><input id="c_hn" value="${esc(d.hefeName||"")}" placeholder="optional"></div>
+      <div class="field full"><label for="c_z">Zusätze</label><input id="c_z" value="${esc(d.zusaetze||"")}" placeholder="z. B. Hefenährsalz, Kaliumpyrosulfit 0,5 g/10 l"></div>
+      <div class="field full"><label for="c_ort">Standort</label><input id="c_ort" value="${esc(d.standort||"")}" placeholder="z. B. Keller"></div>
+      <div class="field"><label for="c_ab">Abgestochen am</label><input id="c_ab" type="date" value="${esc(d.abstich||"")}"></div>
+      <div class="field"><label for="c_kl">Geklärt am</label><input id="c_kl" type="date" value="${esc(d.geklaert||"")}"></div>
+      <div class="field full"><label for="c_km">Klärmethode</label><select id="c_km"><option value="">–</option>${opt(KLAER, d.klaerMethode)}</select></div>
+      <div class="field"><label for="c_af">Abgefüllt am</label><input id="c_af" type="date" value="${esc(d.abgefuellt||"")}"></div>
+      <div class="field"><label for="c_fl">Flaschen</label><input id="c_fl" type="number" inputmode="numeric" min="0" value="${esc(d.flaschen ?? "")}"></div>
+      <div class="field full"><label for="c_n">Notizen</label><textarea id="c_n">${esc(d.notiz||"")}</textarea></div>
+    </form>
+    ${!isNew?`<button class="btn danger" id="delCask" data-armed="0">Behälter löschen</button>`:""}
+  </div>`;
+}
+function openCaskEdit(c){
+  const isNew = !c;
+  const n = casks.length + 1;
+  const draft = c ? {...c} : {name:`Ballon ${n}`, volumen:54, menge:43, angesetzt: todayISO(), temp:16, hefe:"Reinzuchthefe", messungen:[]};
+  sheetState = {mode:"caskedit", id: c ? c.id : null, draft, isNew, dirtyRender:true};
+  render();
+}
+function caskBody(c){ return plain(stamp(c)); }
+
+function niceStep(max){ const raw = max/4, p = Math.pow(10, Math.floor(Math.log10(raw))), n = raw/p; return (n<=1?1:n<=2?2:n<=5?5:10)*p; }
+
+function viewErtrag(){
+  const years = yieldYears().filter(y => trees.some(t => yieldOf(t, y) > 0));
+  if(!years.length) return personFilter !== "alle" ? `<div class="empty">Für diese Person sind keine Erträge erfasst.</div>` : `<div class="empty">Noch keine Erträge erfasst. Öffne einen Baum und trage dort unter „Ertrag (kg)“ die geerntete Menge ein.</div>`;
+  if(!statYear || !years.includes(statYear)) statYear = years[years.length-1];
+  const tot = y => trees.reduce((s,t) => s + yieldOf(t, y), 0);
+  const totals = years.map(tot);
+  const prev = years[years.indexOf(statYear)-1];
+  const cur = tot(statYear), pv = prev ? tot(prev) : null;
+  const delta = pv ? (cur-pv)/pv*100 : null;
+  const harvested = trees.filter(t => yieldOf(t, statYear) > 0);
+  // nach Art
+  const arts = {};
+  trees.forEach(t => { const a = t.art||"Sonstige"; arts[a] ??= {cur:0, prev:0, n:0}; arts[a].cur += yieldOf(t, statYear); if(prev) arts[a].prev += yieldOf(t, prev); if(yieldOf(t, statYear)>0) arts[a].n++; });
+  const artRows = Object.entries(arts).filter(([,v]) => v.cur||v.prev).sort((a,b)=>b[1].cur-a[1].cur);
+  const top = [...harvested].sort((a,b) => yieldOf(b, statYear) - yieldOf(a, statYear)).slice(0,10);
+  const dl = v => v==null ? "–" : `<span class="${v>=0?"up":"down"}">${v>=0?"+":""}${Math.round(v)} %</span>`;
+  return `
+  <div class="chips">${years.map(y => `<button class="chip" data-year="${y}" aria-pressed="${y===statYear}">${y}</button>`).join("")}</div>
+  <div class="stats">
+    <div class="stat"><div class="v">${kg(cur)}</div><div class="l">kg gesamt ${statYear}</div></div>
+    <div class="stat"><div class="v">${delta==null?"–":dl(delta)}</div><div class="l">${prev?"ggü. "+prev:"kein Vorjahr"}</div></div>
+    <div class="stat"><div class="v">${harvested.length ? kg(cur/harvested.length) : "–"}</div><div class="l">kg je tragendem Baum</div></div>
+  </div>
+  <div class="card chart"><span class="eyebrow">Gesamtertrag je Jahr (kg)</span>${barChart(years, totals)}</div>
+  <div class="cols"><div class="card"><span class="eyebrow">Nach Obstart · ${statYear}</span>
+    <div class="tablewrap"><table class="t"><thead><tr><th>Art</th><th class="r">Bäume</th><th class="r">kg</th><th class="r">${prev?"Vorjahr":""}</th></tr></thead>
+    <tbody>${artRows.map(([a,v]) => `<tr><td>${esc(a)}</td><td class="r">${v.n}</td><td class="r"><b>${kg(v.cur)}</b></td><td class="r">${prev ? dl(v.prev ? (v.cur-v.prev)/v.prev*100 : null) : ""}</td></tr>`).join("")}</tbody></table></div>
+  </div>
+  <div class="card"><span class="eyebrow">Ertragsstärkste Bäume · ${statYear}</span>
+    ${top.length ? `<div class="list" style="border:0">${top.map(t => { const p = prev ? yieldOf(t, prev) : 0; const d = p ? (yieldOf(t, statYear)-p)/p*100 : null; return treeItem(t, `<span style="text-align:right;font-variant-numeric:tabular-nums"><b>${kg(yieldOf(t, statYear))} kg</b><br><small>${prev?dl(d):""}</small></span>`); }).join("")}</div>` : `<p class="hint">Für ${statYear} ist kein Ertrag erfasst.</p>`}
+  </div></div>
+  ${personFilter === "alle" ? (() => {
+    const rows = {};
+    const row = id => rows[id] ??= {kg:0, baeume:0, eintraege:0};
+    trees.forEach(t => { const v = Number((t.ertrag||{})[statYear])||0; if(v){ const r = row(yieldBy(t, statYear)); r.kg += v; r.baeume++; } });
+    batches.filter(b => batchYearOf(b) === statYear).forEach(b => row(b.by || UNBEKANNT).eintraege++);
+    const ids = Object.keys(rows); if(ids.length < 1 || (ids.length === 1 && ids[0] === UNBEKANNT)) return "";
+    return `<div class="card"><span class="eyebrow">Eingetragen von · ${statYear}</span><div class="tablewrap"><table class="t"><thead><tr><th>Person</th><th class="r">Bäume</th><th class="r">kg</th><th class="r">Erzeugnisse</th></tr></thead><tbody>${ids.sort((a,b) => rows[b].kg - rows[a].kg).map(id => `<tr><td><button class="linkbtn" style="padding:0;font-size:.9rem;display:inline-flex;gap:6px;align-items:center;color:var(--ink)" data-person="${esc(id)}">${id===UNBEKANNT?"":avatar(id,20)}${esc(id===UNBEKANNT?"Ohne Angabe":personName(id))}</button></td><td class="r">${rows[id].baeume}</td><td class="r"><b>${kg(rows[id].kg)}</b></td><td class="r">${rows[id].eintraege}</td></tr>`).join("")}</tbody></table></div><p class="hint" style="margin:0">Tippe auf eine Person, um die Statistik nur für ihre Einträge zu sehen.</p></div>`;
+  })() : ""}`;
+}
+
+/* ---------- Sheet: Detail ---------- */
+function sheetDetail(t){
+  const st = status(t), n = nextCut(t);
+  const ert = t.ertrag || {}, ys = Object.keys(ert).sort().reverse(), max = Math.max(...Object.values(ert).map(Number), 1);
+  const schnitte = (t.schnitte||[]).slice().sort().reverse();
+  const schutz = (t.schutz||[]).slice().sort((a,b) => (b.datum||"").localeCompare(a.datum||""));
+  return `
+  <div class="sheethead"><div class="wrap"><button class="linkbtn" data-close>‹ Zurück</button><h2>Baum ${esc(t.nr)}</h2><button class="linkbtn" data-edit="${esc(t.id)}">Bearbeiten</button></div></div>
+  <div class="wrap body">
+    <div class="hero"><span class="big" style="background:${statusColor(st)}">${esc(t.nr)}</span>
+      <div class="t"><strong>${esc(t.art||"Baum")}${t.sorte?" · "+esc(t.sorte):""}</strong><span>${esc([t.wuchs, t.pflanzjahr?"gepflanzt "+t.pflanzjahr:""].filter(Boolean).join(" · "))}</span></div></div>
+    ${t.beispiel?`<div class="note">Beispieleintrag – bearbeite oder lösche ihn.</div>`:""}
+    <div class="card">
+      <div class="row"><span class="eyebrow">Schnitt</span><span class="spacer"></span><span class="pill ${st}">${STATUS_TXT[st]}</span></div>
+      <dl class="kv">
+        <dt>Letzter Schnitt</dt><dd>${fmtDate(t.letzterSchnitt)}${t.letzterSchnittVon?` <span class="hint">· ${esc(personName(t.letzterSchnittVon))}</span>`:""}</dd>
+        <dt>Intervall</dt><dd>alle ${t.intervall||12} Monate</dd>
+        <dt>Nächster Schnitt</dt><dd><b>${n?fmtDate(n):"–"}</b>${n?` <span class="hint">(${esc(dueText(t))})</span>`:""}</dd>
+      </dl>
+      <p class="hint">${esc(SCHNITTZEIT[t.art] || SCHNITTZEIT.Sonstige)}</p>
+      <div class="row"><button class="btn primary" data-cut="${esc(t.id)}">Heute geschnitten</button>
+        ${schnitte.length>1?`<span class="hint">Verlauf: ${schnitte.slice(0,5).map(fmtDate).join(", ")}</span>`:""}</div>
+    </div>
+    <div class="card">
+      <div class="row"><span class="eyebrow">Pflanzenschutz</span>${schutzAktiv(t).length?`<span class="pill ok">${schutzAktiv(t).length} aktiv</span>`:""}<span class="spacer"></span><button class="btn small" data-guide="${esc(t.id)}" type="button">Ratgeber</button></div>
+      ${schutz.length ? `<div class="mlist">${schutz.map(m => { const fr = m.bis && !m.erledigt ? daysUntil(m.bis) : null; return `<div class="mitem${m.erledigt?" done":""}"><span class="ptile">${picto(m.art, 26)}</span>
+          <div class="mt"><strong>${esc(m.art)}${m.mittel?` · ${esc(m.mittel)}`:""}</strong>
+          <small>${fmtDate(m.datum)}${m.bis?` · ${m.erledigt?"erledigt":"bis "+fmtDate(m.bis)}`:""}${m.notiz?` · ${esc(m.notiz)}`:""}${byLine(m.by)}</small></div>
+          ${fr!=null?`<span class="pill ${fr<0?"due":fr<=30?"soon":"ok"}">${fr<0?`seit ${-fr} T.`:fr===0?"heute":`in ${fr} T.`}</span>`:""}
+          ${m.bis && !m.erledigt?`<button class="btn small" data-mdone="${esc(m.id)}">Erledigt</button>`:""}
+          <button class="x" data-mdel="${esc(m.id)}" aria-label="Eintrag löschen">×</button></div>`; }).join("")}</div>`
+        : `<p class="hint" style="margin:0">Noch keine Maßnahme erfasst.</p>`}
+      <form class="form" id="schutzForm">
+        <div class="field"><label for="m_art">Maßnahme</label><select id="m_art">${schutzOptions(t.art||"Sonstige")}</select></div>
+        <div class="field"><label for="m_datum">Datum</label><input id="m_datum" type="date" value="${todayISO()}"></div>
+        <div class="field full" id="m_mittel_f"><label for="m_mittel">Mittel / Wirkstoff</label><input id="m_mittel" placeholder="z. B. Neem-Öl, Schwefel, Kupferpräparat"></div>
+        <div class="field"><label for="m_bis">Kontrollieren / entfernen bis</label><input id="m_bis" type="date"></div>
+        <div class="field"><label for="m_notiz">Notiz</label><input id="m_notiz" placeholder="z. B. 2 l, Blattläuse"></div>
+        <div class="full" id="m_guide"></div>
+        <div class="full"><button class="btn primary" type="submit">Maßnahme eintragen</button></div>
+      </form>
+    </div>
+    <div class="card">
+      <span class="eyebrow">Ertrag (kg)</span>
+      ${ys.length ? ys.map(y => `<div class="yrow"><span>${y}</span><span class="bg"><span class="bar" style="display:block;width:${Number(ert[y])/max*100}%"></span></span><b style="text-align:right" title="${esc(personName(((t.ertragMeta||{})[y]||{}).by))}">${kg(Number(ert[y]))}</b><button class="x" data-delyield="${y}" aria-label="Ertrag ${y} löschen">×</button></div>`).join("") : `<p class="hint">Noch kein Ertrag erfasst.</p>`}
+      <form class="yadd" id="yieldForm">
+        <input id="yYear" type="number" inputmode="numeric" min="1990" max="2100" value="${new Date().getFullYear()}" aria-label="Erntejahr">
+        <input id="yKg" type="number" inputmode="decimal" step="0.1" min="0" placeholder="kg" aria-label="Ertrag in kg">
+        <button class="btn primary" type="submit">Eintragen</button>
+      </form>
+      ${ys.some(y => ((t.ertragMeta||{})[y]||{}).by) ? `<div class="hint">${ys.filter(y => ((t.ertragMeta||{})[y]||{}).by).map(y => `${y}: ${esc(personName(t.ertragMeta[y].by))}`).join(" · ")}</div>` : ""}
+      <p class="hint">Ein Eintrag pro Jahr – gleiches Jahr erneut eintragen überschreibt den Wert.</p>
+    </div>
+    <div class="card">
+      <span class="eyebrow">Standort</span>
+      ${isPlaced(t)?`<dl class="kv"><dt>Grundstück</dt><dd>${esc(plotName(t.flaeche))}</dd><dt>Reihe</dt><dd>${treeRow(t)} von ${plotById(t.flaeche).reihen}</dd><dt>Position</dt><dd>${kg(t.x)} m vom Westrand</dd></dl>`:`<p class="hint" style="margin:0">Noch nicht auf dem Plan eingezeichnet.${t.reihe?` Reihe ${esc(t.reihe)}.`:""}</p>`}
+      <div class="row"><button class="btn" data-place="${esc(t.id)}">${isPlaced(t)?"Neu setzen":"Auf Plan setzen"}</button>${isPlaced(t)?`<button class="btn" data-showplan="${esc(t.id)}">Auf Plan zeigen</button>`:""}</div>
+    </div>
+    ${t.notiz?`<div class="card"><span class="eyebrow">Notizen</span><p style="margin:0;white-space:pre-wrap">${esc(t.notiz)}</p></div>`:""}
+    ${t.geaendertVon||t.angelegtVon?`<div class="who">${avatar(t.geaendertVon||t.angelegtVon, 22)}<span>Zuletzt geändert von ${esc(personName(t.geaendertVon||t.angelegtVon))}${t.geaendertAm?` am ${fmtDate(t.geaendertAm.slice(0,10))}`:""}</span></div>`:""}
+  </div>`;
+}
+
+/* ---------- Sheet: Formular ---------- */
+function sheetEdit(d, isNew){
+  const opt = (arr, v) => arr.map(a => `<option ${a===v?"selected":""}>${esc(a)}</option>`).join("");
+  return `
+  <div class="sheethead"><div class="wrap"><button class="linkbtn" data-cancel>Abbrechen</button><h2>${isNew?"Neuer Baum":"Baum "+esc(d.nr)}</h2><button class="linkbtn" form="treeForm" type="submit">Sichern</button></div></div>
+  <div class="wrap body">
+    <form id="treeForm" class="form">
+      <div class="field"><label for="f_nr">Nummer</label><input id="f_nr" required value="${esc(d.nr)}" inputmode="numeric"></div>
+      <div class="field"><label for="f_art">Obstart</label><select id="f_art">${opt(ARTEN, d.art)}</select></div>
+      <div class="field full"><label for="f_sorte">Sorte</label><input id="f_sorte" value="${esc(d.sorte)}" placeholder="z. B. Boskoop, Hauszwetschge"></div>
+      <div class="field"><label for="f_wuchs">Wuchsform</label><select id="f_wuchs"><option value="">–</option>${opt(WUCHS, d.wuchs)}</select></div>
+      <div class="field"><label for="f_pj">Pflanzjahr</label><input id="f_pj" type="number" inputmode="numeric" min="1850" max="2100" value="${esc(d.pflanzjahr)}"></div>
+      <div class="field"><label for="f_ls">Letzter Schnitt</label><input id="f_ls" type="date" value="${esc(d.letzterSchnitt)}"></div>
+      <div class="field"><label for="f_iv">Schnittintervall</label><select id="f_iv">${[6,12,18,24,36].map(m => `<option value="${m}" ${Number(d.intervall||12)===m?"selected":""}>alle ${m} Monate</option>`).join("")}</select></div>
+      <p class="hint full" id="f_hint" style="margin:0">${esc(SCHNITTZEIT[d.art]||SCHNITTZEIT.Sonstige)}</p>
+      <div class="field full"><label for="f_notiz">Notizen</label><textarea id="f_notiz" placeholder="z. B. Mistel entfernt, Stütze nötig">${esc(d.notiz)}</textarea></div>
+      <div class="field"><label for="f_fl">Grundstück</label><select id="f_fl"><option value="">–</option>${garden.flaechen.map(f => `<option value="${esc(f.id)}" ${f.id===d.flaeche?"selected":""}>${esc(f.name)}</option>`).join("")}</select></div>
+      <div class="field"><label for="f_reihe">Reihe</label>${d.x!=null&&plotById(d.flaeche) ? `<input id="f_reihe" value="${esc(treeRow(d))}" readonly aria-describedby="f_reihe_h"><small class="hint" id="f_reihe_h">aus der Position</small>` : `<input id="f_reihe" inputmode="numeric" value="${esc(d.reihe)}" placeholder="z. B. 3">`}</div>
+      <div class="full row"><span class="hint">${d.x!=null&&plotById(d.flaeche)?`Position: Reihe ${treeRow(d)}, ${kg(d.x)} m vom Westrand`:"Position: noch nicht gesetzt"}</span><span class="spacer"></span><button type="button" class="btn" id="f_place">${d.x!=null?"Neu setzen":"Auf Plan setzen"}</button></div>
+    </form>
+    ${!isNew?`<button class="btn danger" id="delTree" data-armed="0">Baum löschen</button>`:""}
+  </div>`;
+}
+function readForm(d){
+  return Object.assign({}, d, {
+    nr: $("#f_nr").value.trim(), art: $("#f_art").value, sorte: $("#f_sorte").value.trim(),
+    wuchs: $("#f_wuchs").value, pflanzjahr: $("#f_pj").value ? Number($("#f_pj").value) : null,
+    letzterSchnitt: $("#f_ls").value || null, intervall: Number($("#f_iv").value),
+    notiz: $("#f_notiz").value,
+    flaeche: $("#f_fl").value || null, reihe: $("#f_reihe").value.trim()
+  });
+}
+function withRow(t){
+  const f = plotById(t.flaeche);
+  if(t.x != null && t.y != null && f){ const row = rowOf(f, Number(t.y)); return {...t, reihe: String(row), x: Math.min(f.breite, Number(t.x)), y: Math.min(f.laenge, Number(t.y))}; }
+  return t;
+}
+
+/* ---------- Sheet: Einstellungen ---------- */
+function sheetSettings(){
+  const exampleCount = trees.filter(t => t.beispiel).length + batches.filter(b => b.beispiel).length + casks.filter(c => c.beispiel).length;
+  const fl = sheetState.draft;
+  return `
+  <div class="sheethead"><div class="wrap"><button class="linkbtn" data-close>Schließen</button><h2>Grundstücke</h2><button class="linkbtn" form="setForm" type="submit">Sichern</button></div></div>
+  <div class="wrap body">
+    <form id="setForm" class="form">
+      <div class="field full"><label for="s_name">Name des Obstgartens</label><input id="s_name" value="${esc(sheetState.name)}" placeholder="z. B. Streuobstwiese am Hang"></div>
+      ${fl.map((f,i) => { const n = trees.filter(t => t.flaeche === f.id).length; return `
+      <div class="card full">
+        <div class="row"><span class="eyebrow">Fläche ${i+1}</span><span class="spacer"></span><span class="hint">${n} ${n===1?"Baum":"Bäume"}</span>
+          ${fl.length>1 && !n ? `<button type="button" class="btn small danger" data-rmplot="${i}">Entfernen</button>` : ""}</div>
+        <div class="form">
+          <div class="field full"><label for="s_fn${i}">Bezeichnung</label><input id="s_fn${i}" value="${esc(f.name)}"></div>
+          <div class="field"><label for="s_fb${i}">Breite (m)</label><input id="s_fb${i}" type="number" inputmode="decimal" min="2" max="1000" step="0.5" value="${esc(f.breite)}"></div>
+          <div class="field"><label for="s_fl${i}">Länge (m)</label><input id="s_fl${i}" type="number" inputmode="decimal" min="2" max="1000" step="0.5" value="${esc(f.laenge)}"></div>
+          <div class="field"><label for="s_fr${i}">Baumreihen</label><input id="s_fr${i}" type="number" inputmode="numeric" min="1" max="200" step="1" value="${esc(f.reihen)}"></div>
+          <div class="field"><label>Reihenabstand</label><input value="${kg(f.laenge/(f.reihen||1))} m" readonly tabindex="-1"></div>
+          <div class="field full"><label>Nicht bepflanzte Reihen <span style="font-weight:400">(antippen zum Umschalten)</span></label>
+            <div class="rowpick">${Array.from({length: f.reihen||0}, (_,k) => k+1).map(n => { const occ = trees.filter(t => isPlaced(t) && t.flaeche === f.id && treeRow(t) === n).length; return `<button type="button" class="rp" data-plotidx="${i}" data-row="${n}" aria-pressed="${(f.freieReihen||[]).includes(n)}" title="${occ?occ+" Bäume in dieser Reihe":"Reihe "+n}">${n}${occ?`<small>${occ}</small>`:""}</button>`; }).join("")}</div>
+          </div>
+        </div>
+      </div>`; }).join("")}
+      <div class="full"><button type="button" class="btn" id="addPlot">Weiteres Grundstück</button></div>
+      <p class="hint full" style="margin:0">Die Grundstücke werden im Plan nebeneinander gezeigt, oben ist Norden. Die Reihen laufen quer über die Länge verteilt, Reihe 1 liegt im Norden. Die Reihe eines Baums ergibt sich automatisch aus seiner Position. Nicht bepflanzte Reihen werden im Plan grau schraffiert, dort lässt sich kein Baum einzeichnen. Die kleine Zahl unter einer Reihennummer zeigt, wie viele Bäume schon darin stehen. Ein Grundstück lässt sich nur entfernen, wenn keine Bäume darauf stehen.</p>
+    </form>
+    ${window.OG_HOST && OG_HOST.personenHTML ? OG_HOST.personenHTML({esc, avatar, personName, meId}) : `<div class="card"><span class="eyebrow">Personen</span>
+      <p class="hint" style="margin:0">Weitere Personen fügst du über <b>Teilen</b> oben in der App hinzu. Jede Person braucht ein eigenes claude.ai-Konto. Wer bearbeiten darf, kann Bäume, Erträge und Einträge ändern. Jede Eintragung wird mit Name und Zeitpunkt im Änderungsverlauf festgehalten.</p>
+      <div class="list" style="border:0">${allPersonIds().map(id => `<div class="who" style="padding:6px 0">${avatar(id, 26)}<span style="color:var(--ink)">${esc(personName(id))}</span></div>`).join("") || `<p class="hint">Noch keine Personen erkannt.</p>`}</div>
+      ${canWrite === false ? `<div class="tip">Du hast für diese App nur Lesezugriff.</div>` : ""}
+    </div>`}
+    ${exampleCount?`<div class="card"><span class="eyebrow">Beispieldaten</span><p class="hint" style="margin:0">${exampleCount} Beispieleinträge (Bäume, Ernte, Apfelwein) sind angelegt, damit du die App ausprobieren kannst.</p><button class="btn danger" id="delExamples" data-armed="0">Alle Beispiele löschen</button></div>`:""}
+    ${FEATURES.exportImport ? `<div class="card"><span class="eyebrow">Sichern & Umziehen</span>
+      <p class="hint" style="margin:0">Exportiert alle Bäume, Schnitte, Erträge und Pflanzenschutz-Einträge als Datei.</p>
+      <div class="row"><button class="btn" id="btnExport" type="button">Daten exportieren</button></div>
+      <div class="form"><div class="field"><label for="importMode">Beim Import</label><select id="importMode"><option value="merge">Ergänzen (gleiche Nummer wird ersetzt)</option><option value="replace">Alles ersetzen</option></select></div>
+      <div class="field"><label for="importFile">Exportdatei wählen</label><input id="importFile" type="file" accept="application/json,.json"></div></div>
+    </div>` : ""}
+    <p class="hint">${trees.length} Bäume · ${yieldYears().length} Erntejahre erfasst. ${window.OG_HOST && OG_HOST.speicherText ? OG_HOST.speicherText : "Die Daten liegen in diesem Artifact und sind auf jedem Gerät verfügbar, auf dem du angemeldet bist."}</p>
+  </div>`;
+}
+
+/* ---------- Rendern ---------- */
+function render(){
+  const name = garden.name || "Obstgarten";
+  $("#title").firstChild.nodeValue = name;
+  $("#subtitle").textContent = loaded ? `${trees.length} Bäume · ${garden.flaechen.length} Grundstücke · ${kg(totalArea())} m²` : (db ? "wird geladen …" : "Datenspeicher nicht erreichbar");
+  const due = trees.filter(t => status(t)==="due").length + schutzFristen().filter(x => x.d < 0).length;
+  const b = $("#dueBadge"); b.hidden = !due; b.textContent = due;
+  const wd = casks.filter(c => !c.abgefuellt && ciderPhase(c).key === "abstich").length;
+  const wb = $("#weinBadge"); wb.hidden = !wd; wb.textContent = wd;
+  document.querySelectorAll("nav.tabs button").forEach(x => x.setAttribute("aria-current", x.dataset.tab===tab ? "page" : "false"));
+  const v = $("#view");
+  const keepScroll = $("#planscroll") ? [$("#planscroll").scrollLeft, $("#planscroll").scrollTop] : null;
+  const examples = trees.some(t => t.beispiel) || batches.some(b => b.beispiel) || casks.some(c => c.beispiel);
+  const banner = (canWrite === false ? `<div class="note"><span>Du hast nur <b>Lesezugriff</b>. Änderungen sind nicht möglich.</span></div>` : "") + (examples && !placing ? `<div class="note"><span>Du siehst <b>Beispieldaten</b>. Lege deine eigenen an und lösche die Beispiele unter ⚙︎.</span></div>` : "");
+  v.innerHTML = banner + ({plan:viewPlan, baeume:viewBaeume, schnitt:viewSchnitt, ernte:viewErtragTab, wein:viewWein}[tab] || viewPlan)();
+  if(keepScroll && $("#planscroll")){ $("#planscroll").scrollLeft = keepScroll[0]; $("#planscroll").scrollTop = keepScroll[1]; }
+  $("#fab").hidden = !!placing || (tab==="ernte" && ertragSeg==="statistik");
+  $("#fab").setAttribute("aria-label", tab==="ernte" ? "Eintrag hinzufügen" : tab==="wein" ? "Gärbehälter hinzufügen" : "Baum hinzufügen");
+  $("#btnAddTop").textContent = tab==="ernte" ? "+ Eintrag" : tab==="wein" ? "+ Behälter" : "+ Baum";
+  $("#btnAddTop").hidden = tab==="ernte" && ertragSeg==="statistik";
+  renderSheet();
+}
+function renderSheet(){
+  const el = $("#sheet");
+  if(!sheetState || placing){ el.hidden = true; el.innerHTML = ""; document.body.classList.remove("sheet-open"); return; }
+  const was = el.hidden; el.hidden = false; document.body.classList.add("sheet-open");
+  if(sheetState.mode === "detail"){
+    const t = trees.find(x => x.id === sheetState.id);
+    if(!t){ sheetState = null; return renderSheet(); }
+    // Formular für Ertrag nicht zerstören, während getippt wird
+    const keep = {}; el.querySelectorAll("input[id],select[id]").forEach(i => keep[i.id] = i.value);
+    const gOpen = !!(el.querySelector("#gdet")||{}).open;
+    const st = el.scrollTop;
+    el.innerHTML = sheetDetail(t);
+    Object.entries(keep).forEach(([id,v]) => { const i = el.querySelector("#"+id); if(i) i.value = v; });
+    syncSchutzForm(); const gd = el.querySelector("#gdet"); if(gd && gOpen) gd.open = true;
+    if(!was) el.scrollTop = st;
+  } else if(sheetState.mode === "edit"){
+    if(!el.querySelector("#treeForm") || sheetState.dirtyRender){ el.innerHTML = sheetEdit(sheetState.draft, sheetState.isNew); sheetState.dirtyRender = false; }
+  } else if(sheetState.mode === "cask"){
+    const c = casks.find(x => x.id === sheetState.id);
+    if(!c){ sheetState = null; return renderSheet(); }
+    const keep = {}; el.querySelectorAll("input[id],select[id]").forEach(i => keep[i.id] = i.value);
+    const st = el.scrollTop;
+    el.innerHTML = sheetCask(c);
+    Object.entries(keep).forEach(([id,v]) => { const i = el.querySelector("#"+id); if(i) i.value = v; });
+    if(!was) el.scrollTop = st;
+  } else if(sheetState.mode === "caskedit"){
+    if(!el.querySelector("#caskForm") || sheetState.dirtyRender){ el.innerHTML = sheetCaskEdit(sheetState.draft, sheetState.isNew); sheetState.dirtyRender = false; }
+  } else if(sheetState.mode === "log"){
+    el.innerHTML = sheetLog();
+  } else if(sheetState.mode === "batch"){
+    if(!el.querySelector("#batchForm") || sheetState.dirtyRender){ el.innerHTML = sheetBatch(sheetState.draft, sheetState.isNew); sheetState.dirtyRender = false; }
+  } else if(sheetState.mode === "guide"){
+    if(!el.querySelector("#guideSheet")) el.innerHTML = `
+      <div class="sheethead" id="guideSheet"><div class="wrap"><button class="linkbtn" data-guideback>‹ Zurück</button><h2>Pflanzenschutz-Ratgeber</h2></div></div>
+      <div class="wrap body"><p class="hint" style="margin:0">Kurzanleitungen zu allen Maßnahmen. Angaben auf Packungen und Gebrauchsanleitungen gehen immer vor.</p>
+      ${(() => { const tr = trees.find(x => x.id === sheetState.back), obst = tr ? (tr.art||"Sonstige") : null;
+        if(!obst || (SCHUTZ_GRUPPE[obst]||"alle") === "alle") return `<div class="guides">${SCHUTZ_ARTEN.filter(a => a !== "Sonstiges").map(a => guideHTML(a, false)).join("")}</div>`;
+        const {empf, weitere} = schutzFuer(obst);
+        return `<span class="eyebrow">Empfohlen für ${esc(obst)}</span><div class="guides">${empf.map(a => guideHTML(a, false, obst)).join("")}</div>
+          <span class="eyebrow">Weitere Maßnahmen</span><div class="guides">${weitere.filter(a => a !== "Sonstiges").map(a => guideHTML(a, false)).join("")}</div>`; })()}</div>`;
+  } else if(sheetState.mode === "settings"){
+    if(!el.querySelector("#setForm") || sheetState.dirtyRender){ el.innerHTML = sheetSettings(); sheetState.dirtyRender = false; }
+  }
+  if(was) el.scrollTop = 0;
+}
+function syncSchutzForm(){
+  const a = $("#m_art"); if(!a) return;
+  const box = $("#m_guide");
+  const tr = sheetState && trees.find(x => x.id === sheetState.id), obst = tr ? (tr.art||"Sonstige") : null;
+  if(box.dataset.art !== a.value + "|" + obst){ const open = !!(box.querySelector("details")||{}).open; box.innerHTML = guideHTML(a.value, true, obst); box.dataset.art = a.value + "|" + obst; const dt = box.querySelector("details"); if(dt && open) dt.open = true; }
+  $("#m_mittel_f").hidden = !["Spritzung","Raupenleim","Stammanstrich (Weißeln)","Sonstiges"].includes(a.value);
+}
+function openDetail(id){ sheetState = {mode:"detail", id}; render(); }
+function openEdit(t){
+  const isNew = !t;
+  const nextNr = trees.reduce((m,x) => Math.max(m, parseInt(x.nr)||0), 0) + 1;
+  const draft = t ? {...t} : {nr:String(nextNr), art:"Apfel", sorte:"", wuchs:"Hochstamm", pflanzjahr:null, letzterSchnitt:null, intervall:12, notiz:"", x:null, y:null, ertrag:{}, schnitte:[]};
+  sheetState = {mode:"edit", id: t ? t.id : null, draft, isNew, dirtyRender:true};
+  render();
+}
+
+/* ---------- Ereignisse ---------- */
+document.addEventListener("click", async e => {
+  const el = e.target.closest("button, g[data-id], g[data-year]");
+  // Plan-Klick
+  const svg = e.target.closest("#plan");
+  if(svg && placing){
+    const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const tol = 1.5;
+    const f = plotLayout().find(f => p.x >= f.ox - tol && p.x <= f.ox + f.breite + tol && p.y >= -tol && p.y <= f.laenge + tol);
+    if(!f){ toast("Bitte innerhalb eines Grundstücks tippen."); return; }
+    placing.flaeche = f.id;
+    placing.x = Math.round(Math.min(f.breite, Math.max(0, p.x - f.ox))*10)/10;
+    const row = rowOf(f, Math.min(f.laenge, Math.max(0, p.y)));
+    if(isFreeRow(f, row)){ toast(`Reihe ${row} auf ${f.name} ist als nicht bepflanzt markiert.`); return; }
+    placing.y = rowCenter(f, row); placing.reihe = String(row);
+    render(); return;
+  }
+  if(!el) return;
+  const d = el.dataset;
+  if(d.tab){ tab = d.tab; window.scrollTo(0,0); render(); return; }
+  if(d.goto){ tab = d.goto; render(); return; }
+  if(d.id && !placing){ openDetail(d.id); return; }
+  if(d.open){ openDetail(d.open); return; }
+  if(d.zoom){ zoom = Math.min(4, Math.max(1, zoom + Number(d.zoom)*0.5)); render(); return; }
+  if(d.art){ artFilter = d.art; render(); return; }
+  if(d.plot){ plotFilter = d.plot; render(); return; }
+  if(window.OG_HOST && OG_HOST.onClick && await OG_HOST.onClick(el, d)) return;
+  if(d.pfilter){ pflegeFilter = d.pfilter; render(); return; }
+  if(d.psort){ pflegeSort = d.psort; render(); return; }
+  if(d.person){ personFilter = d.person; render(); return; }
+  if(d.logp){ sheetState.filter = d.logp; renderSheet(); return; }
+  if(el.id === "btnLog"){ sheetState = {mode:"log", filter:"alle"}; render(); refreshPeople(); return; }
+  if(d.seg){ ertragSeg = d.seg; try{ localStorage.setItem("obstgarten.ertragSeg", d.seg); }catch(_){} if(d.seg === "statistik" && batchYear) statYear = batchYear; else if(statYear) batchYear = statYear; render(); return; }
+  if(d.year && tab==="ernte" && !el.closest("#sheet")){ statYear = d.year; batchYear = d.year; render(); return; }
+  if(el.hasAttribute("data-close")){ sheetState = null; render(); return; }
+  if(el.hasAttribute("data-cancel")){ sheetState = sheetState.id ? {mode:"detail", id:sheetState.id} : null; render(); return; }
+  if(d.edit){ openEdit(trees.find(t => t.id === d.edit)); return; }
+  if(d.showplan){ sheetState = {mode:"detail", id:d.showplan}; tab = "plan"; const t = trees.find(x=>x.id===d.showplan); sheetState = null; render(); highlight(t); return; }
+  if(d.cut){
+    const t = trees.find(x => x.id === d.cut); if(!t) return;
+    const today = todayISO(); const s = new Set(t.schnitte||[]); if(t.letzterSchnitt) s.add(t.letzterSchnitt); s.add(today);
+    const body = treeBody({...t, letzterSchnitt: today, letzterSchnittVon: meId, schnitte:[...s].sort().slice(-20)});
+    await save(() => db.collection("trees").doc(t.id).set(body), `Schnitt am ${fmtDate(today)} eingetragen`, `Baum ${t.nr}`);
+    return;
+  }
+  if(d.delyield){
+    const t = trees.find(x => x.id === sheetState.id); if(!t) return;
+    const ert = {...(t.ertrag||{})}; delete ert[d.delyield];
+    const em = {...(t.ertragMeta||{})}; delete em[d.delyield];
+    await save(() => db.collection("trees").doc(t.id).set(treeBody({...t, ertrag: ert, ertragMeta: em})), `Ertrag ${d.delyield} gelöscht`, `Baum ${t.nr}`);
+    return;
+  }
+  if(d.guide){ sheetState = {mode:"guide", back:d.guide}; render(); return; }
+  if(el.hasAttribute("data-guideback")){ sheetState = sheetState.back ? {mode:"detail", id:sheetState.back} : null; render(); return; }
+  if(d.mdone || d.mdel){
+    const t = trees.find(x => x.id === sheetState.id); if(!t) return;
+    const list = (t.schutz||[]).map(m => ({...m}));
+    let next, msg;
+    if(d.mdone){ const mm = list.find(m => m.id === d.mdone); next = list.map(m => m.id === d.mdone ? {...m, erledigt:true, erledigtVon: meId} : m); msg = `${mm ? mm.art : "Maßnahme"} als erledigt markiert`; }
+    else {
+      if(el.dataset.armed !== "1"){ el.dataset.armed = "1"; el.textContent = "?"; el.setAttribute("aria-label","Nochmal tippen zum Löschen"); return; }
+      const mm = list.find(m => m.id === d.mdel); next = list.filter(m => m.id !== d.mdel); msg = `${mm ? mm.art : "Maßnahme"} gelöscht`;
+    }
+    await save(() => db.collection("trees").doc(t.id).set(treeBody({...t, schutz: next})), msg, `Baum ${t.nr}`);
+    return;
+  }
+  if(el.id === "btnExport"){ doExport(); return; }
+  if(d.place){ const t = trees.find(x => x.id === d.place); startPlacing({...t}, false); return; }
+  if(el.id === "f_place"){ startPlacing(readForm(sheetState.draft), true); return; }
+  if(el.id === "donePlace"){ finishPlacing(); return; }
+  if(el.id === "btnSettings"){ sheetState = {mode:"settings", name: garden.name||"", draft: garden.flaechen.map(f => ({...f})), dirtyRender:true}; render(); return; }
+  if(d.plotidx != null && d.row){
+    const f = sheetState.draft[Number(d.plotidx)], n = Number(d.row);
+    const set = new Set(f.freieReihen||[]); set.has(n) ? set.delete(n) : set.add(n);
+    f.freieReihen = [...set].sort((a,b)=>a-b);
+    el.setAttribute("aria-pressed", set.has(n));
+    return;
+  }
+  if(el.id === "addPlot" || d.rmplot){
+    readSettings();
+    if(el.id === "addPlot"){ const n = sheetState.draft.length + 1; sheetState.draft.push({id:"g"+uid(), name:`Grundstück ${n}`, breite:20, laenge:60, reihen:12, freieReihen:[]}); }
+    else sheetState.draft.splice(Number(d.rmplot), 1);
+    sheetState.dirtyRender = true; renderSheet(); return;
+  }
+  if(el.id === "fab" || el.id === "btnAddTop"){ tab === "ernte" ? openBatch(null) : tab === "wein" ? openCaskEdit(null) : openEdit(null); return; }
+  if(d.cask){ sheetState = {mode:"cask", id:d.cask}; render(); return; }
+  if(d.caskedit){ openCaskEdit(casks.find(c => c.id === d.caskedit)); return; }
+  if(el.hasAttribute("data-caskcancel")){ sheetState = sheetState.id ? {mode:"cask", id:sheetState.id} : null; render(); return; }
+  if(d.caskstep){
+    const c = casks.find(x => x.id === sheetState.id); if(!c) return;
+    const upd = {...c}, today = todayISO();
+    if(d.caskstep === "abstich"){ upd.abstich = today; upd.abstichVon = meId; }
+    if(d.caskstep === "geklaert"){ upd.geklaert = today; upd.geklaertVon = meId; upd.klaerMethode = $("#k_meth") ? $("#k_meth").value : ""; }
+    if(d.caskstep === "abgefuellt"){
+      const fl = parseInt($("#a_fl").value), l = parseFloat(String($("#a_l").value).replace(",", "."));
+      if(lastOe(c) != null && lastOe(c) > 5 && el.dataset.armed !== "1"){ el.dataset.armed = "1"; el.textContent = "Noch nicht durchgegoren – trotzdem?"; return; }
+      upd.abgefuellt = today; upd.abgefuelltVon = meId; if(fl > 0) upd.flaschen = fl; if(l > 0) upd.abfuellLiter = Math.round(l*10)/10;
+      if(!upd.abstich) upd.abstich = upd.abstich || null;
+    }
+    await save(() => db.collection("keller").doc(c.id).set(caskBody(upd)), ({abstich:"Abstich eingetragen", geklaert:"Klärung eingetragen", abgefuellt:"Abfüllung eingetragen"})[d.caskstep], c.name);
+    return;
+  }
+  if(d.mdelc){
+    const c = casks.find(x => x.id === sheetState.id); if(!c) return;
+    if(el.dataset.armed !== "1"){ el.dataset.armed = "1"; el.textContent = "?"; return; }
+    await save(() => db.collection("keller").doc(c.id).set(caskBody({...c, messungen:(c.messungen||[]).filter(m => m.id !== d.mdelc)})), "Messung gelöscht", c.name);
+    return;
+  }
+  if(el.id === "delCask"){
+    if(el.dataset.armed !== "1"){ el.dataset.armed = "1"; el.textContent = "Wirklich löschen? Nochmal tippen"; return; }
+    const id = sheetState.id, cc = casks.find(x => x.id === id);
+    if(await save(() => db.collection("keller").doc(id).delete(), "Behälter gelöscht", cc && cc.name)){ sheetState = null; render(); }
+    return;
+  }
+  if(el.id === "btnAddBatch"){ openBatch(null); return; }
+  if(d.batch){ openBatch(batches.find(b => b.id === d.batch)); return; }
+  if(d.byear){ batchYear = d.byear; statYear = d.byear; render(); return; }
+  if(el.id === "delBatch"){
+    if(el.dataset.armed !== "1"){ el.dataset.armed = "1"; el.textContent = "Wirklich löschen? Nochmal tippen"; return; }
+    const id = sheetState.id, bb = batches.find(x => x.id === id);
+    if(await save(() => db.collection("verarbeitung").doc(id).delete(), "Eintrag gelöscht", bb && `${fmtMenge(bb.menge, bb.einheit)} ${bb.typ} vom ${fmtDate(bb.datum)}`)){ sheetState = null; render(); }
+    return;
+  }
+  if(el.id === "delTree"){
+    if(el.dataset.armed !== "1"){ el.dataset.armed = "1"; el.textContent = "Wirklich löschen? Nochmal tippen"; return; }
+    const id = sheetState.id, tt = trees.find(x => x.id === id);
+    if(await save(() => db.collection("trees").doc(id).delete(), "Baum gelöscht", tt && `Baum ${tt.nr}`)){ sheetState = null; render(); }
+    return;
+  }
+  if(el.id === "delExamples"){
+    if(el.dataset.armed !== "1"){ el.dataset.armed = "1"; el.textContent = "Wirklich alle Beispiele löschen?"; return; }
+    const ex = trees.filter(t => t.beispiel), exb = batches.filter(b => b.beispiel), exc = casks.filter(c => c.beispiel);
+    await save(async () => { for(const t of ex) await db.collection("trees").doc(t.id).delete(); for(const b of exb) await db.collection("verarbeitung").doc(b.id).delete(); for(const c of exc) await db.collection("keller").doc(c.id).delete(); }, `${ex.length + exb.length + exc.length} Beispiele gelöscht`);
+    sheetState = null; render(); return;
+  }
+});
+
+document.addEventListener("input", e => {
+  if(e.target.id === "q"){ query = e.target.value; $("#treelist").innerHTML = treeListHTML(); }
+});
+document.addEventListener("change", e => {
+  if(e.target.id === "importFile" && e.target.files[0]){
+    const mode = $("#importMode").value, f = e.target.files[0], r = new FileReader();
+    r.onload = async () => {
+      let obj; try{ obj = JSON.parse(r.result); }catch(_){ toast("Die Datei ist kein gültiges JSON."); return; }
+      const err = validateImport(obj); if(err){ toast(err); return; }
+      await save(async () => { const n = await applyImport(obj, mode); toast(`${n} Bäume importiert`); });
+    };
+    r.readAsText(f); e.target.value = "";
+  }
+  if(/^s_fr\d+$/.test(e.target.id) && sheetState && sheetState.mode === "settings"){ readSettings(); sheetState.dirtyRender = true; renderSheet(); return; }
+  if(e.target.id === "b_typ"){ const t = VERARB_TYPEN[e.target.value]; if(t) $("#b_einheit").value = t.einheit; $("#b_icon").innerHTML = vIcon(e.target.value, 52, $("#b_obst").value, e.target.value === "Saft" && ["","Apfel","Gemischt"].includes($("#b_obst").value)); return; }
+  if(e.target.id === "b_obst"){ $("#b_icon").innerHTML = vIcon($("#b_typ").value, 52, e.target.value, $("#b_typ").value === "Saft" && ["","Apfel","Gemischt"].includes(e.target.value)); return; }
+  if(e.target.id === "m_art"){
+    syncSchutzForm();
+    if(e.target.value === "Leimring" && !$("#m_bis").value){ const y = new Date().getFullYear() + (new Date().getMonth() >= 6 ? 1 : 0); $("#m_bis").value = y+"-03-31"; }
+  }
+  if(e.target.id === "f_art"){ $("#f_hint").textContent = SCHNITTZEIT[e.target.value] || SCHNITTZEIT.Sonstige; }
+});
+document.addEventListener("submit", async e => {
+  e.preventDefault();
+  if(e.target.id === "treeForm"){
+    const d = readForm(sheetState.draft);
+    if(!d.nr){ toast("Bitte eine Nummer vergeben."); return; }
+    if(trees.some(t => t.id !== sheetState.id && String(t.nr) === d.nr)){ toast(`Nummer ${d.nr} ist schon vergeben.`); return; }
+    d.beispiel = false;
+    if(d.letzterSchnitt){ const s = new Set(d.schnitte||[]); s.add(d.letzterSchnitt); d.schnitte = [...s].sort().slice(-20); }
+    const orig = trees.find(t => t.id === sheetState.id);
+    if(d.letzterSchnitt && (!orig || orig.letzterSchnitt !== d.letzterSchnitt)) d.letzterSchnittVon = meId;
+    if(sheetState.isNew) d.angelegtVon = meId;
+    const ref = sheetState.id ? db?.collection("trees").doc(sheetState.id) : db?.collection("trees").doc();
+    if(await save(() => ref.set(treeBody(withRow(d))), sheetState.isNew ? `Baum ${d.nr} angelegt` : `Baum ${d.nr} bearbeitet`)){
+      sheetState = {mode:"detail", id: ref.id}; render();
+    }
+  }
+  if(e.target.id === "yieldForm"){
+    const t = trees.find(x => x.id === sheetState.id); if(!t) return;
+    const y = String(parseInt($("#yYear").value)); const v = parseFloat(String($("#yKg").value).replace(",", "."));
+    if(!(y > 1900) || !(v >= 0)){ toast("Bitte Jahr und Menge in kg angeben."); return; }
+    $("#yKg").value = "";
+    await save(() => db.collection("trees").doc(t.id).set(treeBody({...t, ertrag:{...(t.ertrag||{}), [y]: Math.round(v*10)/10}, ertragMeta:{...(t.ertragMeta||{}), [y]: {by: meId, at: nowISO()}}})), `${kg(v)} kg Ertrag für ${y} eingetragen`, `Baum ${t.nr}`);
+  }
+  if(e.target.id === "schutzForm"){
+    const t = trees.find(x => x.id === sheetState.id); if(!t) return;
+    const art = $("#m_art").value, datum = $("#m_datum").value;
+    if(!datum){ toast("Bitte ein Datum angeben."); return; }
+    const mittel = $("#m_mittel_f").hidden ? "" : $("#m_mittel").value.trim();
+    if(art === "Spritzung" && !mittel){ toast("Bitte angeben, womit gespritzt wurde."); return; }
+    const m = {id: uid(), art, datum, mittel, bis: $("#m_bis").value || null, notiz: $("#m_notiz").value.trim(), erledigt:false, by: meId, at: nowISO()};
+    if(await save(() => db.collection("trees").doc(t.id).set(treeBody({...t, schutz:[...(t.schutz||[]), m]})), `${art}${mittel?` (${mittel})`:""} eingetragen`, `Baum ${t.nr}`)){
+      ["m_mittel","m_bis","m_notiz"].forEach(id => { const i = $("#"+id); if(i) i.value = ""; });
+    }
+  }
+  if(e.target.id === "oeForm"){
+    const c = casks.find(x => x.id === sheetState.id); if(!c) return;
+    const num = id => { const v = String($(id).value).replace(",", ".").trim(); return v === "" ? null : Number(v); };
+    const oe = num("#o_oe"), tp = num("#o_t");
+    if(oe == null && tp == null){ toast("Bitte °Oechsle oder Temperatur eintragen."); return; }
+    const m = {id: uid(), datum: $("#o_d").value || todayISO(), oe, temp: tp, notiz: $("#o_n").value.trim(), by: meId};
+    if(await save(() => db.collection("keller").doc(c.id).set(caskBody({...c, messungen:[...(c.messungen||[]), m]})), `Messung ${oe != null ? kg(oe) + " °Oe" : kg(tp) + " °C"} eingetragen`, c.name)){
+      ["o_oe","o_t","o_n"].forEach(i => { const x = $("#"+i); if(x) x.value = ""; });
+    }
+    return;
+  }
+  if(e.target.id === "caskForm"){
+    const num = id => { const v = String($(id).value).replace(",", ".").trim(); return v === "" ? null : Number(v); };
+    const d0 = sheetState.draft;
+    const body = {...d0, name: $("#c_name").value.trim(), volumen: num("#c_vol"), menge: num("#c_menge"), angesetzt: $("#c_ang").value,
+      temp: num("#c_temp"), obst: $("#c_obst").value.trim(), speierling: $("#c_sp").checked, oechsle: num("#c_oe"), saeure: num("#c_s"),
+      hefe: $("#c_hefe").value, hefeName: $("#c_hn").value.trim(), zusaetze: $("#c_z").value.trim(), standort: $("#c_ort").value.trim(),
+      abstich: $("#c_ab").value || null, geklaert: $("#c_kl").value || null, klaerMethode: $("#c_km").value, abgefuellt: $("#c_af").value || null,
+      flaschen: num("#c_fl"), notiz: $("#c_n").value, beispiel:false};
+    if(!body.name || !(body.volumen > 0) || !(body.menge >= 0) || !body.angesetzt){ toast("Bitte Bezeichnung, Behältergröße, Menge und Datum angeben."); return; }
+    if(body.menge > body.volumen){ toast("Es ist mehr Saft eingetragen, als in den Behälter passt."); return; }
+    const ref = sheetState.id ? db?.collection("keller").doc(sheetState.id) : db?.collection("keller").doc();
+    if(sheetState.isNew) body.by = meId;
+    if(await save(() => ref.set(caskBody(body)), sheetState.isNew ? `${kg(body.menge)} l angesetzt` : "bearbeitet", body.name)){
+      sheetState = {mode:"cask", id: ref.id}; render();
+    }
+    return;
+  }
+  if(e.target.id === "batchForm"){
+    const menge = parseFloat(String($("#b_menge").value).replace(",", "."));
+    const datum = $("#b_datum").value;
+    if(!datum || !(menge >= 0)){ toast("Bitte Datum und Menge angeben."); return; }
+    const okg = parseFloat(String($("#b_kg").value).replace(",", "."));
+    const body = {typ: $("#b_typ").value, datum, menge: Math.round(menge*10)/10, einheit: $("#b_einheit").value, obst: $("#b_obst").value,
+      obstKg: okg > 0 ? Math.round(okg*10)/10 : null, ort: $("#b_ort").value.trim(), notiz: $("#b_notiz").value, beispiel:false};
+    const orig = batches.find(b => b.id === sheetState.id);
+    body.by = orig ? (orig.by || null) : meId; body.at = orig ? (orig.at || null) : nowISO();
+    const ref = sheetState.id ? db?.collection("verarbeitung").doc(sheetState.id) : db?.collection("verarbeitung").doc();
+    if(await save(() => ref.set(plain(stamp(body))), `${fmtMenge(body.menge, body.einheit)} ${body.typ}${body.obst?` (${body.obst})`:""} ${orig ? "geändert" : "eingetragen"}`, "Ertrag")){
+      batchYear = datum.slice(0,4); sheetState = null; render();
+    }
+    return;
+  }
+  if(e.target.id === "setForm"){
+    readSettings();
+    const fl = sheetState.draft;
+    if(fl.some(f => !(f.breite >= 2) || !(f.laenge >= 2) || !(f.reihen >= 1))){ toast("Bitte gültige Maße in Metern angeben."); return; }
+    if(fl.some(f => !f.name)){ toast("Bitte jedem Grundstück eine Bezeichnung geben."); return; }
+    const body = {name: sheetState.name, flaechen: fl};
+    if(await save(() => db.doc("settings/garten").set(body), "Grundstücke geändert", "Einstellungen")){ sheetState = null; render(); }
+  }
+});
+
+function readSettings(){
+  if(!$("#setForm")) return;
+  sheetState.name = $("#s_name").value.trim();
+  sheetState.draft = sheetState.draft.map((f,i) => ({id: f.id, name: $("#s_fn"+i).value.trim(), breite: parseFloat($("#s_fb"+i).value), laenge: parseFloat($("#s_fl"+i).value), reihen: parseInt($("#s_fr"+i).value), freieReihen: (f.freieReihen||[]).filter(n => n <= parseInt($("#s_fr"+i).value))}));
+}
+function startPlacing(draft, fromForm){
+  placing = draft; placing._fromForm = fromForm; placing._prev = {x:draft.x, y:draft.y, flaeche:draft.flaeche};
+  tab = "plan"; window.scrollTo(0,0); render();
+}
+async function finishPlacing(){
+  const p = placing; placing = null;
+  const moved = p.x != null && (p.x !== p._prev.x || p.y !== p._prev.y || p.flaeche !== p._prev.flaeche);
+  const {_fromForm, _prev, ...draft} = p;
+  if(_fromForm){
+    sheetState.draft = draft; sheetState.dirtyRender = true; render();
+  } else {
+    if(moved) await save(() => db.collection("trees").doc(draft.id).set(treeBody(withRow(draft))), `Baum ${draft.nr} eingezeichnet`, "Plan");
+    sheetState = {mode:"detail", id:draft.id}; render();
+  }
+}
+function highlight(t){
+  if(!t) return;
+  requestAnimationFrame(() => {
+    const g = document.querySelector(`#plan g[data-id="${CSS.escape(t.id)}"] circle`);
+    if(g){ g.setAttribute("stroke","var(--ink)"); g.scrollIntoView({block:"center", inline:"center", behavior:"smooth"}); }
+  });
+}
+
+document.addEventListener("keydown", e => {
+  if(e.key !== "Escape") return;
+  if(placing){ placing = null; render(); return; }
+  if(sheetState){ sheetState = sheetState.mode === "edit" && sheetState.id ? {mode:"detail", id:sheetState.id} : sheetState.mode === "guide" && sheetState.back ? {mode:"detail", id:sheetState.back} : sheetState.mode === "caskedit" && sheetState.id ? {mode:"cask", id:sheetState.id} : null; render(); }
+});
+let _rz; window.addEventListener("resize", () => { clearTimeout(_rz); _rz = setTimeout(() => { if(tab === "plan") render(); }, 150); });
+
+/* ---------- Daten ---------- */
+window.OG_APP = {render: () => render(), refreshPeople: () => { _pp = null; refreshPeople(); }, toast: m => toast(m), closeSheet: () => { sheetState = null; render(); }};
+render();
+(async () => {
+  const c = window.claude;
+  try{ db = c && c.use ? await c.use("db") : null; }catch(_){ db = null; }
+  if(!db){ loaded = true; render(); return; }
+  try{ userApi = c && c.use ? await c.use("user") : null; }catch(_){ userApi = null; }
+  if(userApi){
+    try{ meId = await userApi.id(); }catch(_){ meId = null; }
+    try{ canWrite = await userApi.can("data.write"); }catch(_){ canWrite = null; }
+    refreshPeople();
+  }
+  db.collection("protokoll").orderBy("at", "desc").limit(300).onSnapshot(snap => {
+    protokoll = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    refreshPeople();
+    if(sheetState && sheetState.mode === "log") renderSheet();
+  }, () => {});
+  const timer = setTimeout(() => { if(!loaded){ $("#subtitle").textContent = "Daten noch nicht erreichbar …"; } }, 10000);
+  db.collection("trees").onSnapshot(snap => {
+    trees = snap.docs.map(d => ({id:d.id, ...d.data()})); refreshPeople();
+    if(!snap.metadata.fromCache){ loaded = true; clearTimeout(timer); }
+    else loaded = true;
+    render();
+  }, err => { loaded = true; clearTimeout(timer); toast("Bäume konnten nicht geladen werden."); render(); });
+  db.collection("keller").onSnapshot(snap => {
+    casks = snap.docs.map(d => ({id:d.id, ...d.data()})); refreshPeople();
+    if(!(sheetState && sheetState.mode === "caskedit")) render();
+  }, () => {});
+  db.collection("verarbeitung").onSnapshot(snap => {
+    batches = snap.docs.map(d => ({id:d.id, ...d.data()})); refreshPeople();
+    if(!(sheetState && sheetState.mode === "batch")) render();
+  }, () => {});
+  db.doc("settings/garten").onSnapshot(snap => {
+    if(snap.exists){ const v = snap.data(); garden = {name: v.name||"", flaechen: normFlaechen(v)}; }
+    if(!(sheetState && sheetState.mode === "settings")) render();
+  }, () => {});
+})();
+})();
+</script>
+
+</body>
+</html>
