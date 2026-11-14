@@ -232,7 +232,7 @@ window.OG_HOST = {
     </div>
     <div class="card"><span class="eyebrow">Neue Person</span>
       <div class="ogseg" role="tablist" style="width:100%;box-sizing:border-box;display:flex;gap:4px;background:var(--line);border-radius:10px;padding:3px">
-        ${[["password","Mit Startpasswort"],["invite","Per Mail einladen"],["test","Testperson"]].map(([k, l]) => `<button type="button" data-ognewmode="${k}" aria-pressed="${newMode === k}" style="flex:1;border:0;border-radius:8px;padding:8px 4px;font-weight:600;background:${newMode === k ? "var(--surface)" : "transparent"};color:${newMode === k ? "var(--ink)" : "var(--muted)"}">${l}</button>`).join("")}
+        ${[["password","Mit Startpasswort"],["test","Testperson"]].map(([k, l]) => `<button type="button" data-ognewmode="${k}" aria-pressed="${newMode === k}" style="flex:1;border:0;border-radius:8px;padding:8px 4px;font-weight:600;background:${newMode === k ? "var(--surface)" : "transparent"};color:${newMode === k ? "var(--ink)" : "var(--muted)"}">${l}</button>`).join("")}
       </div>
       ${pw && lastCreated ? `<div class="tip" style="text-align:left">${esc(lastCreated.name)} ist angelegt. Gib ihr diese Anmeldedaten weiter: <b>${esc(lastCreated.email)}</b> · Startpasswort: <b>${esc(lastCreated.password)}</b><br><span class="hint">Bei der ersten Anmeldung muss sie ein eigenes Passwort festlegen.</span></div>` : ""}
       ${test && lastTest ? `<div class="tip" style="text-align:left">Testperson angelegt. Anmeldung: <b>${esc(lastTest.email)}</b> · Passwort: <b>${esc(lastTest.password)}</b><br><span class="hint">Notier dir die Daten – das Passwort wird nicht noch einmal angezeigt. Anmelden am besten in einem privaten Browserfenster.</span></div>` : ""}
@@ -323,8 +323,8 @@ document.addEventListener("submit", async e => {
       if(r2.error || r2.data !== "ok") warn = " – angepasste Häkchen bitte noch einmal speichern";
     }
     if(test) lastTest = {email: data.email, password};
-    if(pw) lastCreated = {name: name || data.email, email: data.email, password};
-    const msg = test ? "Testperson angelegt" : pw ? "Person angelegt" : data.status === "invited" ? "Einladung verschickt" : data.status === "existing" ? "Person war schon registriert und ist jetzt freigeschaltet" : "Das bist du selbst";
+    if(pw && data.status === "created") lastCreated = {name: name || data.email, email: data.email, password};
+    const msg = test ? "Testperson angelegt" : pw && data.status === "created" ? "Person angelegt" : pw && data.status === "existing" ? "Konto gab es schon – Person ist freigeschaltet und meldet sich mit ihrem bisherigen Passwort an" : data.status === "invited" ? "Einladung verschickt" : data.status === "existing" ? "Person war schon registriert und ist jetzt freigeschaltet" : "Das bist du selbst";
     window.OG_FRESH = true; OG_APP.toast(msg + warn); await loadMembers(); OG_APP.closeSheet();
     return;
   }

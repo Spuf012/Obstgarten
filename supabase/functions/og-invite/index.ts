@@ -44,7 +44,27 @@ Deno.serve(async (req) => {
     const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { name, og_pw_pending: true } });
     if (error || !data.user) {
       const exists = /already|exists|registered/i.test(error?.message || "") || (error as any)?.code === "email_exists";
-      return json({ error: exists ? "Zu dieser E-Mail gibt es schon ein Konto. Nutze „Per E-Mail einladen“, um es freizuschalten." : "Anlegen fehlgeschlagen: " + (error?.message || "unbekannt") }, 400);
+      if (!exists) return json({ error: "Anlegen fehlgeschlagen: " + (error?.message || "unbekannt") }, 400);
+      // Konto gibt es schon → nur freischalten, Passwort bleibt unverändert
+      let uid: string | null = null;
+      for (let page = 1; page <= 20 && !uid; page++) {
+        const { data: lu, error: le } = await admin.auth.admin.listUsers({ page, perPage: 200 });
+        if (le || !lu.users.length) break;
+        uid = lu.users.find((u) => (u.email || "").toLowerCase() === email)?.id || null;
+      }
+      if (!uid) return json({ error: "Konto zu dieser E-Mail nicht gefunden." }, 400);
+      const { data: ex } = await admin.from("og_members").select("role").eq("user_id", uid).maybeSingle();
+      if (ex?.role === "owner") return json({ status: "owner", user_id: uid });
+      const { error: e3 } = await admin.from("og_members").upsert({ user_id: uid, name, role, rechte: null }, { onConflict: "user_id" });
+      if (e3) return json({ error: "Freischalten fehlgeschlagen: " + e3.message }, 400);
+      // Konto wartet noch auf sein erstes Passwort (z. B. Einladung nie abgeschlossen) → Startpasswort setzen
+      const { data: gu } = await admin.auth.admin.getUserById(uid);
+      if (gu?.user?.user_metadata?.og_pw_pending) {
+        const { error: e4 } = await admin.auth.admin.updateUserById(uid, { password, email_confirm: true });
+        if (e4) return json({ error: "Startpasswort setzen fehlgeschlagen: " + e4.message }, 400);
+        return json({ status: "created", email, user_id: uid });
+      }
+      return json({ status: "existing", email, user_id: uid });
     }
     const { error: e2 } = await admin.from("og_members").insert({ user_id: data.user.id, name, role });
     if (e2) { await admin.auth.admin.deleteUser(data.user.id); return json({ error: "Anlegen fehlgeschlagen: " + e2.message }, 400); }
