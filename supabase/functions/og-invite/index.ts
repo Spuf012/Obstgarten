@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
     if (error || !data.user) return json({ error: "Anlegen fehlgeschlagen: " + (error?.message || "unbekannt") }, 400);
     const { error: e2 } = await admin.from("og_members").insert({ user_id: data.user.id, name: name + " (Test)", role, test: true, test_login: email });
     if (e2) { await admin.auth.admin.deleteUser(data.user.id); return json({ error: "Anlegen fehlgeschlagen: " + e2.message }, 400); }
-    return json({ status: "test", email });
+    return json({ status: "test", email, user_id: data.user.id });
   }
 
   if (action === "deletetest") {
@@ -83,8 +83,8 @@ Deno.serve(async (req) => {
   }
 
   const { data: existing } = await admin.from("og_members").select("role").eq("user_id", uid).maybeSingle();
-  if (existing?.role === "owner") return json({ status: "owner" });
+  if (existing?.role === "owner") return json({ status: "owner", user_id: uid });
   const { error } = await admin.from("og_members").upsert({ user_id: uid, name, role, rechte: null }, { onConflict: "user_id" });
   if (error) return json({ error: "Freischalten fehlgeschlagen: " + error.message }, 400);
-  return json({ status });
+  return json({ status, user_id: uid });
 });

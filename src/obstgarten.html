@@ -307,6 +307,7 @@ body.sheet-open{overflow:hidden}
   <h1 id="title">Obstgarten<span class="sub" id="subtitle">wird geladen …</span></h1>
   <button class="btn primary addtop" id="btnAddTop" type="button">+ Baum</button>
   <button class="iconbtn" id="btnLog" aria-label="Änderungsverlauf"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg></button>
+  <button class="iconbtn" id="btnLogout" aria-label="Abmelden" title="Abmelden" hidden><svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l-5-5 5-5"/><path d="M5 12h11"/></svg></button>
   <button class="iconbtn" id="btnSettings" aria-label="Grundstück einstellen"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
 </div></header>
 
@@ -1091,19 +1092,23 @@ function sheetLog(){
   <div class="wrap body">${logListHTML(sheetState.filter, "data-logp")}</div>`;
 }
 /* ---------- Reiter Verwaltung (nur Verwaltung) ---------- */
-let vlogFilter = "alle";
+let vlogFilter = "alle", vsub = "benutzer";
 function viewVerwaltung(){
   if(!isAdmin()) return `<div class="empty">Kein Zugriff.</div>`;
   const exampleCount = trees.filter(t => t.beispiel).length + batches.filter(b => b.beispiel).length + casks.filter(c => c.beispiel).length;
+  const subs = [["benutzer","Benutzer"],["garten","Garten"],["verlauf","Verlauf"]];
   return `<div class="vstack" style="display:flex;flex-direction:column;gap:14px">
-    ${OG_HOST.personenHTML({esc, avatar, personName, meId})}
-    <div class="card"><span class="eyebrow">Grundstücke &amp; Garten</span>
+    <div class="ogseg" role="tablist" aria-label="Verwaltung" style="width:100%;box-sizing:border-box;display:flex;gap:4px;background:var(--line);border-radius:12px;padding:3px">
+      ${subs.map(([k, l]) => `<button type="button" role="tab" data-vsub="${k}" aria-selected="${vsub === k}" style="flex:1;border:0;border-radius:9px;padding:9px 4px;font-weight:700;background:${vsub === k ? "var(--surface)" : "transparent"};color:${vsub === k ? "var(--ink)" : "var(--muted)"}">${l}</button>`).join("")}
+    </div>
+    ${vsub === "benutzer" ? OG_HOST.personenHTML({esc, avatar, personName, meId}) : ""}
+    ${vsub === "garten" ? `<div class="card"><span class="eyebrow">Grundstücke &amp; Garten</span>
       <dl class="kv"><dt>Name</dt><dd>${esc(garden.name || "Obstgarten")}</dd>
       ${garden.flaechen.map(f => `<dt>${esc(f.name)}</dt><dd>${kg(f.breite)} × ${kg(f.laenge)} m · ${f.reihen} Reihen · ${trees.filter(t => t.flaeche === f.id).length} Bäume</dd>`).join("")}</dl>
       <div class="row"><button class="btn" data-opensettings type="button">Grundstücke bearbeiten</button></div>
-    </div>
-    <div class="card"><span class="eyebrow">Änderungsverlauf</span>${logListHTML(vlogFilter, "data-vlogp")}</div>
-    ${exampleCount ? `<div class="card"><span class="eyebrow">Beispieldaten</span><p class="hint" style="margin:0">${exampleCount} Beispieleinträge (Bäume, Ernte, Apfelwein) sind angelegt, damit du die App ausprobieren kannst.</p><button class="btn danger" id="delExamples" data-armed="0">Alle Beispiele löschen</button></div>` : ""}
+    </div>` : ""}
+    ${vsub === "verlauf" ? `<div class="card"><span class="eyebrow">Änderungsverlauf</span>${logListHTML(vlogFilter, "data-vlogp")}</div>` : ""}
+    ${vsub === "garten" && exampleCount ? `<div class="card"><span class="eyebrow">Beispieldaten</span><p class="hint" style="margin:0">${exampleCount} Beispieleinträge (Bäume, Ernte, Apfelwein) sind angelegt, damit du die App ausprobieren kannst.</p><button class="btn danger" id="delExamples" data-armed="0">Alle Beispiele löschen</button></div>` : ""}
   </div>`;
 }
 function openBatch(b){
@@ -1558,6 +1563,8 @@ function render(){
   const wd = casks.filter(c => !c.abgefuellt && ciderPhase(c).key === "abstich").length;
   const wb = $("#weinBadge"); wb.hidden = !wd; wb.textContent = wd;
   if(!tabVisible(tab)){ const first = Object.keys(TAB_BEREICH).find(tabVisible); if(first) tab = first; }
+  $("#btnSettings").hidden = !!window.OG_HOST && !isAdmin();
+  $("#btnLogout").hidden = !window.OG_HOST || isAdmin();
   document.querySelectorAll("nav.tabs button").forEach(x => { x.hidden = !tabVisible(x.dataset.tab); x.setAttribute("aria-current", x.dataset.tab===tab ? "page" : "false"); });
   const v = $("#view");
   const keepScroll = $("#planscroll") ? [$("#planscroll").scrollLeft, $("#planscroll").scrollTop] : null;
@@ -1679,6 +1686,7 @@ document.addEventListener("click", async e => {
   if(d.person){ personFilter = d.person; render(); return; }
   if(d.logp){ sheetState.filter = d.logp; renderSheet(); return; }
   if(d.vlogp){ vlogFilter = d.vlogp; render(); return; }
+  if(d.vsub){ vsub = d.vsub; window.OG_FRESH = true; render(); window.scrollTo(0, 0); return; }
   if(el.hasAttribute("data-opensettings")){ $("#btnSettings").click(); return; }
   if(el.id === "btnLog"){ sheetState = {mode:"log", filter:"alle"}; render(); refreshPeople(); return; }
   if(d.seg){ ertragSeg = d.seg; try{ localStorage.setItem("obstgarten.ertragSeg", d.seg); }catch(_){} if(d.seg === "statistik" && batchYear) statYear = batchYear; else if(statYear) batchYear = statYear; render(); return; }
@@ -1719,6 +1727,12 @@ document.addEventListener("click", async e => {
   if(d.place){ const t = trees.find(x => x.id === d.place); startPlacing({...t}, false); return; }
   if(el.id === "f_place"){ startPlacing(readForm(sheetState.draft), true); return; }
   if(el.id === "donePlace"){ finishPlacing(); return; }
+  if(el.id === "btnLogout"){
+    if(PERM() && PERM().preview){ toast("In der Vorschau nicht möglich – hier würde sich die Person abmelden."); return; }
+    if(el.dataset.armed !== "1"){ el.dataset.armed = "1"; toast("Zum Abmelden nochmal tippen"); setTimeout(() => { el.dataset.armed = "0"; }, 3000); return; }
+    OG_HOST.logout(); return;
+  }
+  if(el.id === "btnSettings" && window.OG_HOST && !isAdmin()) return;
   if(el.id === "btnSettings"){ sheetState = {mode:"settings", name: garden.name||"", draft: garden.flaechen.map(f => ({...f})), dirtyRender:true}; render(); return; }
   if(d.plotidx != null && d.row){
     const f = sheetState.draft[Number(d.plotidx)], n = Number(d.row);

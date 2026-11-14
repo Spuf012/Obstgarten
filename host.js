@@ -197,7 +197,7 @@ function myRightsHTML(esc){
   const em = effMember(), r = rechteOf(em); if(!r || em.role === "owner") return "";
   return `<div style="text-align:left;margin-top:6px"><b>${preview ? "Rechte in der Vorschau" : "Deine Rechte"}</b>${tableHTML(r, esc, true)}<p class="hint" style="margin:4px 0 0">Ändern und löschen kannst du nur, was du selbst eingetragen hast.</p></div>`;
 }
-let lastTest = null;
+let lastTest = null, newMode = "invite";
 function setPreview(p){
   preview = p;
   let bar = document.getElementById("ogPreviewBar");
@@ -212,37 +212,45 @@ function setPreview(p){
 document.addEventListener("click", e => { if(e.target.closest && e.target.closest("#ogPreviewEnd")){ setPreview(null); OG_APP.goto && OG_APP.goto("verwaltung"); OG_APP.toast("Vorschau beendet"); } });
 window.OG_HOST = {
   speicherText: "Die Daten liegen in der Supabase-Datenbank und sind auf jedem Gerät verfügbar, auf dem du dich anmeldest.",
+  logout: async () => { await sb.auth.signOut(); location.reload(); },
   personenHTML({esc}){
-    const isOwner = OG_PERM.owner;
+    if(!OG_PERM.owner) return `<div class="card"><span class="eyebrow">Zugang</span>${myRightsHTML(esc)}<div class="row"><span class="hint">Angemeldet als ${esc(session.user.email)}</span><span class="spacer"></span><button class="btn small" data-oglogout type="button">Abmelden</button></div></div>`;
     const order = {owner:0, bearbeiten:1, erfassen:2, lesen:3};
     const list = Object.values(members).sort((a,b) => (order[a.role] ?? 9) - (order[b.role] ?? 9) || a.name.localeCompare(b.name));
-    return `<div class="card"><span class="eyebrow">Personen &amp; Rechte</span>
+    const avatarOf = m => `<span class="av av0" style="width:26px;height:26px;background:${colorFor(m.user_id)};color:#fff;border-color:transparent">${esc((m.name||"?").trim()[0]||"?").toUpperCase()}</span>`;
+    const roleOpts = sel => ["lesen","erfassen","bearbeiten"].map(k => `<option value="${k}" ${k === sel ? "selected" : ""}>${ROLLEN[k].label} – ${ROLLEN[k].text}</option>`).join("");
+    const test = newMode === "test";
+    return `<div class="card"><span class="eyebrow">Personen</span>
+      <p class="hint" style="margin:0">Person antippen, um ihre Rechte zu sehen und zu ändern.</p>
       <div class="list" style="border:0">${list.map(m => {
-        const head = `<span style="display:inline-flex;gap:8px;align-items:center;color:var(--ink)"><span class="av av0" style="width:26px;height:26px;background:${colorFor(m.user_id)};color:#fff;border-color:transparent">${esc((m.name||"?").trim()[0]||"?").toUpperCase()}</span>${esc(m.name || "Ohne Namen")}${m.user_id === session.user.id ? " (du)" : ""} ${rolePill(m)}${testPill(m)}</span>`;
-        if(isOwner && m.role !== "owner") return `<details class="ogperson" style="padding:6px 0"><summary class="who" style="cursor:pointer;list-style:none;justify-content:space-between">${head}<span class="hint">Rechte ›</span></summary>${matrixHTML(m, esc)}</details>`;
-        return `<div class="who" style="padding:6px 0">${head}</div>`;
+        const head = `<span style="display:inline-flex;gap:8px;align-items:center;color:var(--ink)">${avatarOf(m)}${esc(m.name || "Ohne Namen")}${m.user_id === session.user.id ? " (du)" : ""} ${rolePill(m)}${testPill(m)}</span>`;
+        if(m.role !== "owner") return `<details class="ogperson" style="padding:6px 0;border-bottom:1px solid var(--line)"><summary class="who" style="cursor:pointer;list-style:none;justify-content:space-between">${head}<span class="btn small" style="pointer-events:none">Rechte ›</span></summary>${matrixHTML(m, esc)}</details>`;
+        return `<div class="who" style="padding:8px 0;border-bottom:1px solid var(--line)">${head}<span class="hint">darf alles</span></div>`;
       }).join("")}</div>
-      ${myRightsHTML(esc)}
       <details><summary class="hint" style="cursor:pointer">Was bedeuten die Rollen?</summary><dl class="kv">${Object.values(ROLLEN).map(r => `<dt>${r.label}</dt><dd>${r.text}</dd>`).join("")}</dl>
-        <p class="hint" style="margin:0">Die Rolle ist eine Vorlage. Die Verwaltung kann danach für jede Person pro Seite und Grundstück anhaken, was erlaubt ist (Sehen, Anlegen, Ändern, Löschen). Ändern und löschen darf jede Person nur ihre eigenen Einträge; die Verwaltung darf alles.</p></details>
+        <p class="hint" style="margin:0">Die Rolle ist eine Vorlage für die Häkchen. Danach kannst du für jede Person pro Seite und Grundstück anhaken, was erlaubt ist. Ändern und Löschen gelten nur für eigene Einträge; die Verwaltung darf alles.</p></details>
+    </div>
+    <div class="card"><span class="eyebrow">Neue Person</span>
+      <div class="ogseg" role="tablist" style="width:100%;box-sizing:border-box;display:flex;gap:4px;background:var(--line);border-radius:10px;padding:3px">
+        ${[["invite","Per E-Mail einladen"],["test","Testperson"]].map(([k, l]) => `<button type="button" data-ognewmode="${k}" aria-pressed="${newMode === k}" style="flex:1;border:0;border-radius:8px;padding:8px 4px;font-weight:600;background:${newMode === k ? "var(--surface)" : "transparent"};color:${newMode === k ? "var(--ink)" : "var(--muted)"}">${l}</button>`).join("")}
+      </div>
+      ${test && lastTest ? `<div class="tip" style="text-align:left">Testperson angelegt. Anmeldung: <b>${esc(lastTest.email)}</b> · Passwort: <b>${esc(lastTest.password)}</b><br><span class="hint">Notier dir die Daten – das Passwort wird nicht noch einmal angezeigt. Anmelden am besten in einem privaten Browserfenster.</span></div>` : ""}
+      <form class="form" id="ogNewForm" data-mode="${newMode}">
+        <p class="hint full" style="margin:0">${test ? "Die App vergibt eine Fantasie-Adresse zum Anmelden. Damit probierst du die Rechte in einem privaten Browserfenster wirklich aus." : "Die Person bekommt eine E-Mail mit Link, legt darüber ihr Passwort fest und ist sofort mit diesen Rechten freigeschaltet."}</p>
+        <div class="field"><label for="og_newname">Name</label><input id="og_newname" placeholder="${test ? "z. B. Test Erfassen" : "Vorname"}" ${test ? "required" : ""}></div>
+        ${test ? `<div class="field"><label for="og_tpw">Passwort</label><input id="og_tpw" type="text" minlength="6" autocomplete="off" required placeholder="mind. 6 Zeichen"></div>`
+               : `<div class="field"><label for="og_email">E-Mail</label><input id="og_email" type="email" autocomplete="off" required></div>`}
+        <div class="field full"><label>Rolle (Vorlage – setzt die Häkchen)</label><select data-ogrole id="og_newrole">${roleOpts("lesen")}</select></div>
+        <div class="full" style="overflow-x:auto">${tableHTML(TEMPLATES.lesen, esc, false)}</div>
+        <div class="full"><button class="btn primary" type="submit">${test ? "Testperson anlegen" : "Einladung senden"}</button></div>
+      </form>
+    </div>
+    <div class="card"><span class="eyebrow">Ansicht als …</span>
+      <p class="hint" style="margin:0">Zeigt die App so, wie eine Rolle sie sieht (für eine bestimmte Person: Person antippen → „Ansicht als“). In der Vorschau wird nichts gespeichert.</p>
+      <div class="row" style="gap:8px;flex-wrap:wrap">${["bearbeiten","erfassen","lesen"].map(k => `<button class="btn small" type="button" data-ogpreviewrole="${k}">${ROLLEN[k].label}</button>`).join("")}</div>
+    </div>
+    <div class="card"><span class="eyebrow">Mein Zugang</span>
       <form class="form" id="ogNameForm"><div class="field"><label for="og_myname">Dein Anzeigename</label><input id="og_myname" value="${esc(member ? member.name : "")}"></div><div class="field" style="justify-content:flex-end"><button class="btn" type="submit">Namen speichern</button></div></form>
-      ${isOwner ? `<div style="border-top:1px solid var(--line);padding-top:12px"><p style="margin:0 0 6px"><b>Ansicht als …</b></p><p class="hint" style="margin:0 0 8px">Zeigt die App so, wie eine Rolle sie sieht. In der Vorschau wird nichts gespeichert.</p>
-        <div class="row" style="gap:8px;flex-wrap:wrap">${["bearbeiten","erfassen","lesen"].map(k => `<button class="btn small" type="button" data-ogpreviewrole="${k}">${ROLLEN[k].label}</button>`).join("")}</div></div>` : ""}
-      ${isOwner ? `<form class="form" id="ogTestForm" style="border-top:1px solid var(--line);padding-top:12px">
-        <p class="full" style="margin:0"><b>Testperson anlegen</b></p>
-        <p class="hint full" style="margin:0">Ohne echte E-Mail-Adresse: Die App vergibt eine Fantasie-Adresse zum Anmelden. Melde dich damit in einem privaten Browserfenster an, um die Rechte wirklich auszuprobieren.</p>
-        ${lastTest ? `<div class="tip full" style="text-align:left">Testperson angelegt. Anmeldung: <b>${esc(lastTest.email)}</b> · Passwort: <b>${esc(lastTest.password)}</b><br><span class="hint">Notier dir die Daten – das Passwort wird nicht noch einmal angezeigt.</span></div>` : ""}
-        <div class="field"><label for="og_tname">Name</label><input id="og_tname" placeholder="z. B. Test Erfassen" required></div>
-        <div class="field"><label for="og_tpw">Passwort</label><input id="og_tpw" type="text" minlength="6" autocomplete="off" required placeholder="mind. 6 Zeichen"></div>
-        <div class="field full"><label for="og_trole">Rolle</label><select id="og_trole">${["lesen","erfassen","bearbeiten"].map(k => `<option value="${k}">${ROLLEN[k].label} – ${ROLLEN[k].text}</option>`).join("")}</select></div>
-        <div class="full"><button class="btn primary" type="submit">Testperson anlegen</button></div></form>` : ""}
-      ${isOwner ? `<form class="form" id="ogInviteForm" style="border-top:1px solid var(--line);padding-top:12px">
-        <p class="full" style="margin:0"><b>Person einladen</b></p>
-        <p class="hint full" style="margin:0">Die Person bekommt eine E-Mail mit einem Link, legt darüber ihr Passwort fest und ist sofort mit der gewählten Rolle freigeschaltet. Hat sie sich schon selbst registriert, wird sie direkt freigeschaltet.</p>
-        <div class="field"><label for="og_email">E-Mail</label><input id="og_email" type="email" autocomplete="off" required></div>
-        <div class="field"><label for="og_newname">Name</label><input id="og_newname" placeholder="Vorname"></div>
-        <div class="field full"><label for="og_newrole">Rolle</label><select id="og_newrole">${["lesen","erfassen","bearbeiten"].map(k => `<option value="${k}">${ROLLEN[k].label} – ${ROLLEN[k].text}</option>`).join("")}</select></div>
-        <div class="full"><button class="btn primary" type="submit">Einladung senden</button></div></form>` : ""}
       <div class="row"><span class="hint">Angemeldet als ${esc(session.user.email)}</span><span class="spacer"></span><button class="btn small" data-oglogout type="button">Abmelden</button></div>
     </div>`;
   },
@@ -253,6 +261,7 @@ window.OG_HOST = {
       const {data, error} = await sb.rpc("og_remove_member", {p_user: d.ogremove});
       window.OG_FRESH = true; OG_APP.toast(error || data !== "ok" ? "Entfernen fehlgeschlagen." : "Person entfernt"); await loadMembers(); OG_APP.closeSheet(); return true;
     }
+    if(d.ognewmode){ newMode = d.ognewmode; OG_APP.render(); return true; }
     if(d.ogpreview){ const m = members[d.ogpreview]; if(m){ setPreview({label: m.name || "Person", member: m}); OG_APP.toast(`Ansicht als ${m.name || "Person"}`); } return true; }
     if(d.ogpreviewrole){ setPreview({label: "Rolle " + ROLLEN[d.ogpreviewrole].label, member: {user_id: "preview-" + d.ogpreviewrole, role: d.ogpreviewrole, rechte: null}}); OG_APP.toast(`Ansicht als Rolle ${ROLLEN[d.ogpreviewrole].label}`); return true; }
     if(d.ogdeltest){
@@ -283,36 +292,39 @@ document.addEventListener("change", e => {
   if(c.dataset.oga === "sehen" && !c.checked) row.forEach(x => x.checked = false);
   if(c.dataset.oga !== "sehen" && c.checked){ const s = row.find(x => x.dataset.oga === "sehen"); if(s) s.checked = true; }
 }, true);
+// Rolle + Häkchen aus einem Formular lesen; rechte = null, wenn genau die Vorlage
+function rechteFromForm(f){
+  const role = f.querySelector("[data-ogrole]").value, t = TEMPLATES[role];
+  const r = {bereiche:{}, grundstuecke:{}};
+  f.querySelectorAll("input[data-ogr]").forEach(c => { const [kind, key] = c.dataset.ogr.split(/:(.*)/s); const box = kind === "b" ? r.bereiche : r.grundstuecke; (box[key] ||= {sehen:false, anlegen:false, aendern:false, loeschen:false})[c.dataset.oga] = c.checked; });
+  const eq = (x, y, nurSA) => { const a = normRecht(x, nurSA), b = normRecht(y, nurSA); return AKTIONEN.every(([k]) => a[k] === b[k]); };
+  const same = BEREICHE.every(([k]) => eq(r.bereiche[k], t.bereiche[k], !!NUR_SEHEN_AENDERN[k])) && Object.entries(r.grundstuecke).every(([k, v]) => eq(v, grundOf(t, k), false));
+  return {role, rechte: same ? null : r};
+}
 document.addEventListener("submit", async e => {
   if(e.target.classList && e.target.classList.contains("ogrights")){
     e.preventDefault(); e.stopImmediatePropagation();
-    const f = e.target, role = f.querySelector("[data-ogrole]").value, t = TEMPLATES[role];
-    const r = {bereiche:{}, grundstuecke:{}};
-    f.querySelectorAll("input[data-ogr]").forEach(c => { const [kind, key] = c.dataset.ogr.split(/:(.*)/s); const box = kind === "b" ? r.bereiche : r.grundstuecke; (box[key] ||= {sehen:false, anlegen:false, aendern:false, loeschen:false})[c.dataset.oga] = c.checked; });
-    const eq = (x, y, nurSA) => { const a = normRecht(x, nurSA), b = normRecht(y, nurSA); return AKTIONEN.every(([k]) => a[k] === b[k]); };
-    const same = BEREICHE.every(([k]) => eq(r.bereiche[k], t.bereiche[k], !!NUR_SEHEN_AENDERN[k])) && Object.entries(r.grundstuecke).every(([k, v]) => eq(v, grundOf(t, k), false));
-    const {data, error} = await sb.rpc("og_set_member", {p_user: f.dataset.oguser, p_role: role, p_rechte: same ? null : r});
+    const f = e.target, {role, rechte} = rechteFromForm(f);
+    const {data, error} = await sb.rpc("og_set_member", {p_user: f.dataset.oguser, p_role: role, p_rechte: rechte});
     window.OG_FRESH = true; OG_APP.toast(error || data !== "ok" ? "Speichern fehlgeschlagen." : "Rechte gespeichert"); await loadMembers(); OG_APP.closeSheet(); return;
   }
-  if(e.target.id === "ogTestForm"){
+  if(e.target.id === "ogNewForm"){
     e.preventDefault(); e.stopImmediatePropagation();
-    const btn = e.target.querySelector("button[type=submit]"); btn.disabled = true; btn.textContent = "Wird angelegt …";
-    const password = document.getElementById("og_tpw").value;
-    const {data, error} = await sb.functions.invoke("og-invite", {body: {action: "test", name: document.getElementById("og_tname").value, password, role: document.getElementById("og_trole").value}});
-    if(error){ let msg = "Anlegen fehlgeschlagen."; try{ msg = (await error.context.json()).error || msg; }catch(_){} OG_APP.toast(msg); btn.disabled = false; btn.textContent = "Testperson anlegen"; return; }
-    lastTest = {email: data.email, password};
-    window.OG_FRESH = true; OG_APP.toast("Testperson angelegt"); await loadMembers(); OG_APP.closeSheet();
+    const f = e.target, test = f.dataset.mode === "test", {role, rechte} = rechteFromForm(f);
+    const btn = f.querySelector("button[type=submit]"), label = btn.textContent; btn.disabled = true; btn.textContent = test ? "Wird angelegt …" : "Wird gesendet …";
+    const name = document.getElementById("og_newname").value, password = test ? document.getElementById("og_tpw").value : "";
+    const body = test ? {action: "test", name, password, role} : {email: document.getElementById("og_email").value, name, role};
+    const {data, error} = await sb.functions.invoke("og-invite", {body});
+    if(error){ let msg = "Fehlgeschlagen."; try{ msg = (await error.context.json()).error || msg; }catch(_){} OG_APP.toast(msg); btn.disabled = false; btn.textContent = label; return; }
+    let warn = "";
+    if(rechte && data.user_id && data.status !== "owner"){
+      const r2 = await sb.rpc("og_set_member", {p_user: data.user_id, p_role: role, p_rechte: rechte});
+      if(r2.error || r2.data !== "ok") warn = " – angepasste Häkchen bitte noch einmal speichern";
+    }
+    if(test) lastTest = {email: data.email, password};
+    const msg = test ? "Testperson angelegt" : data.status === "invited" ? "Einladung verschickt" : data.status === "existing" ? "Person war schon registriert und ist jetzt freigeschaltet" : "Das bist du selbst";
+    window.OG_FRESH = true; OG_APP.toast(msg + warn); await loadMembers(); OG_APP.closeSheet();
     return;
-  }
-  if(e.target.id === "ogInviteForm"){
-    e.preventDefault(); e.stopImmediatePropagation();
-    const btn = e.target.querySelector("button[type=submit]"); btn.disabled = true; btn.textContent = "Wird gesendet …";
-    const {data, error} = await sb.functions.invoke("og-invite", {body: {email: document.getElementById("og_email").value, name: document.getElementById("og_newname").value, role: document.getElementById("og_newrole").value}});
-    let msg;
-    if(error){ msg = "Einladung fehlgeschlagen."; try{ msg = (await error.context.json()).error || msg; }catch(_){} }
-    else msg = data.status === "invited" ? "Einladung verschickt" : data.status === "existing" ? "Person war schon registriert und ist jetzt freigeschaltet" : "Das bist du selbst";
-    OG_APP.toast(msg); btn.disabled = false; btn.textContent = "Einladung senden";
-    if(!error){ e.target.reset(); await loadMembers(); }
   }
   if(e.target.id === "ogNameForm"){
     e.preventDefault(); e.stopImmediatePropagation();
