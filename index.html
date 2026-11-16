@@ -214,6 +214,14 @@ dl.kv dd{margin:0;font-variant-numeric:tabular-nums;min-width:0}
   .prow .plabel{display:none}
 }
 .filterrows{display:flex;flex-direction:column;gap:8px}
+.fbtn{position:relative}
+.fbtn[aria-expanded="true"]{background:var(--ink)}
+.fbtn[aria-expanded="true"] svg{stroke:var(--bg)}
+.fbadge{position:absolute;top:-5px;right:-5px;background:var(--accent);color:var(--accent-ink);border-radius:999px;font-size:.65rem;font-weight:700;min-width:17px;height:17px;display:grid;place-items:center;padding:0 4px}
+.fpanel{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.factive{display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--muted);flex-wrap:wrap}
+.factive b{color:var(--ink)}
+.factive .linkbtn{padding:0;font-size:.88rem}
 .frow{display:flex;align-items:center;gap:10px;min-width:0}
 .flabel{flex:none;width:68px;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .frow .chips{flex:1;min-width:0}
@@ -1028,14 +1036,26 @@ function vIcon(typ, size, obst, apfel){
 const fmtMenge = (v, e) => `${kg(Number(v)||0)} ${e==="Gläser" && Number(v)===1 ? "Glas" : e==="Flaschen" && Number(v)===1 ? "Flasche" : e}`;
 function sumBy(list, pred){ return list.filter(pred).reduce((a,b) => a + (Number(b.menge)||0), 0); }
 
+let filterOffen = false;
 function viewErtragTab(){
-  const seg = `<div class="seg" role="group" aria-label="Ansicht"><button data-seg="uebersicht" aria-pressed="${ertragSeg==="uebersicht"}">Erzeugnisse</button><button data-seg="statistik" aria-pressed="${ertragSeg==="statistik"}">Erntestatistik</button></div>`;
-  return seg + personChips() + (ertragSeg === "statistik" ? viewErtrag() : viewErnte());
+  const erz = ertragSeg === "uebersicht";
+  const aktiv = [personFilter !== "alle" ? (personFilter === UNBEKANNT ? "Ohne Angabe" : personName(personFilter)) : "",
+    erz && erzTyp !== "alle" ? erzTyp : "", erz && erzObst !== "alle" ? (erzObst === OHNE_OBST ? "ohne Obstangabe" : erzObst) : ""].filter(Boolean);
+  const pc = personChips(), ec = erz ? erzChips() : "";
+  const hatFilter = !!(pc || ec);
+  const seg = `<div class="row" style="gap:8px;flex-wrap:nowrap">
+    <div class="seg" role="group" aria-label="Ansicht"><button data-seg="uebersicht" aria-pressed="${ertragSeg==="uebersicht"}">Erzeugnisse</button><button data-seg="statistik" aria-pressed="${ertragSeg==="statistik"}">Erntestatistik</button></div>
+    <span class="spacer"></span>
+    ${hatFilter ? `<button class="iconbtn fbtn" id="btnFilter" aria-expanded="${filterOffen}" aria-label="Filter ${filterOffen ? "ausblenden" : "anzeigen"}"><svg viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>${aktiv.length ? `<span class="fbadge">${aktiv.length}</span>` : ""}</button>` : ""}
+  </div>
+  ${hatFilter && filterOffen ? `<div class="fpanel">${pc}${ec}${filterResetBtn()}</div>` : ""}
+  ${hatFilter && !filterOffen && aktiv.length ? `<div class="factive"><span>Gefiltert: <b>${esc(aktiv.join(" · "))}</b></span><button class="linkbtn" data-allreset>Zurücksetzen</button></div>` : ""}`;
+  return seg + (erz ? viewErnte() : viewErtrag());
 }
 function batchRow(b){
   const aus = b.obstKg && b.einheit === "l" ? ` · ${kg(b.menge/b.obstKg*100)} l je 100 kg` : "";
   return `<button class="item vitem" data-batch="${esc(b.id)}"><span class="ptile">${vIcon(b.typ, 32, b.obst, isApfelsaft(b))}</span>
-    <span class="t"><strong>${esc(fmtMenge(b.menge, b.einheit))} ${esc(b.typ === "Saft" && b.obst && b.obst !== "Gemischt" ? b.obst + "saft" : b.typ)}${b.obst && !(b.typ === "Saft") ? ` · ${esc(b.obst)}` : b.obst === "Gemischt" ? " · gemischt" : ""}</strong>
+    <span class="t"><strong>${esc(fmtMenge(b.menge, b.einheit))} ${esc(b.typ === "Saft" ? saftName(saftKey(b)) : b.typ)}${b.obst && !(b.typ === "Saft") ? ` · ${esc(b.obst)}` : b.obst === "Gemischt" ? " · gemischt" : ""}</strong>
     <small>${fmtDate(b.datum)}${b.ort?` · ${esc(b.ort)}`:""}${b.obstKg?` · aus ${kg(b.obstKg)} kg`:""}${aus}${byLine(b.by)}</small></span><span></span></button>`;
 }
 /* Filter in „Erzeugnisse“: Erzeugnisart und Fruchtart */
@@ -1043,6 +1063,9 @@ let erzTyp = "alle", erzObst = "alle";
 const OHNE_OBST = "ohne";
 const obstKey = b => b.obst || OHNE_OBST;
 const passErz = b => (erzTyp === "alle" || b.typ === erzTyp) && (erzObst === "alle" || obstKey(b) === erzObst);
+function filterResetBtn(){
+  return (personFilter !== "alle" || erzTyp !== "alle" || erzObst !== "alle") ? `<button class="linkbtn" data-allreset style="align-self:flex-start;padding:2px 0;font-size:.9rem">Alle Filter zurücksetzen</button>` : "";
+}
 function erzChips(){
   const typen = Object.keys(VERARB_TYPEN).filter(k => batches.some(b => b.typ === k));
   if(erzTyp !== "alle" && !typen.includes(erzTyp)) typen.push(erzTyp);
@@ -1055,68 +1078,80 @@ function erzChips(){
   return `<div class="filterrows">
     ${typen.length > 1 ? `<div class="frow"><span class="flabel">Erzeugnis</span><div class="chips" role="group" aria-label="Nach Erzeugnis filtern"><button class="chip" data-erztyp="alle" aria-pressed="${erzTyp==="alle"}">Alle</button>${typen.map(t => `<button class="chip ichip" data-erztyp="${esc(t)}" aria-pressed="${erzTyp===t}">${vIcon(t, 18, erzObst !== "alle" && erzObst !== OHNE_OBST ? erzObst : null, t === "Saft" && (erzObst === "alle" || erzObst === "Apfel" || erzObst === "Gemischt"))}${esc(lbl(t))}</button>`).join("")}</div></div>` : ""}
     ${obst.length > 1 ? `<div class="frow"><span class="flabel">Obst</span><div class="chips" role="group" aria-label="Nach Obst filtern"><button class="chip" data-erzobst="alle" aria-pressed="${erzObst==="alle"}">Alle</button>${obst.map(o => `<button class="chip ichip" data-erzobst="${esc(o)}" aria-pressed="${erzObst===o}">${dot(o)}${esc(o === OHNE_OBST ? "Ohne Angabe" : o)}</button>`).join("")}</div></div>` : ""}
-    ${erzTyp !== "alle" || erzObst !== "alle" ? `<button class="linkbtn" data-erzreset style="align-self:flex-start;padding:2px 0;font-size:.9rem">Filter zurücksetzen</button>` : ""}
   </div>`;
+}
+/* Säfte je Obstart; Apfel und „Gemischt“ (Wiesenmischung) gelten als Apfelsaft */
+const SAFTNAME = {"Apfel":"Apfelsaft","Birne":"Birnensaft","Quitte":"Quittensaft","Süßkirsche":"Kirschsaft","Sauerkirsche":"Sauerkirschsaft","Zwetschge":"Zwetschgensaft","Pflaume":"Pflaumensaft","Mirabelle":"Mirabellensaft","Reneklode":"Reneklodensaft","Aprikose":"Aprikosensaft","Pfirsich":"Pfirsichsaft","Weinrebe":"Traubensaft","Speierling":"Speierlingssaft","Walnuss":"Walnusssaft","Esskastanie":"Kastaniensaft","Sonstige":"Saft (sonstige)"};
+const saftKey = b => b.typ !== "Saft" ? null : (!b.obst || b.obst === "Apfel" || b.obst === "Gemischt") ? "Apfel" : b.obst;
+const saftName = k => SAFTNAME[k] || `${k}saft`;
+const SAFT_ORDER = ["Apfel","Birne","Quitte","Süßkirsche","Sauerkirsche","Weinrebe","Zwetschge","Pflaume","Mirabelle","Reneklode","Aprikose","Pfirsich","Speierling"];
+function saftCard(k, jahrListe, alleListe, years){
+  const name = saftName(k);
+  const l = sumBy(jahrListe, b => b.einheit === "l");
+  const kgSum = jahrListe.reduce((a,b) => a + (Number(b.obstKg)||0), 0);
+  const mitKg = jahrListe.filter(b => b.obstKg > 0 && b.einheit === "l");
+  const ausbeute = mitKg.length ? sumBy(mitKg, () => true) / mitKg.reduce((a,b) => a + Number(b.obstKg), 0) * 100 : null;
+  const jahre = years.filter(y => alleListe.some(b => batchYearOf(b) === y));
+  const totals = jahre.map(y => sumBy(alleListe, b => batchYearOf(b) === y && b.einheit === "l"));
+  const pi = jahre.indexOf(batchYear) - 1, prevL = pi >= 0 ? totals[pi] : null;
+  const obstWort = ({"Apfel":"Äpfeln","Birne":"Birnen","Quitte":"Quitten","Süßkirsche":"Kirschen","Sauerkirsche":"Sauerkirschen","Zwetschge":"Zwetschgen","Pflaume":"Pflaumen","Mirabelle":"Mirabellen","Reneklode":"Renekloden","Aprikose":"Aprikosen","Pfirsich":"Pfirsichen","Weinrebe":"Trauben","Speierling":"Speierlingen"})[k] || "Obst";
+  const gemischt = jahrListe.some(b => b.obst === "Gemischt");
+  const nichtLiter = jahrListe.filter(b => b.einheit !== "l");
+  return `<section class="card prod">
+    <div class="phead"><span class="ptile big">${vIcon("Saft", 64, k, k === "Apfel")}</span>
+      <div class="pt"><span class="eyebrow">${esc(name)} ${batchYear}</span>
+        <div class="pbig">${kg(l)}<span> Liter</span></div>
+        <div class="psub">${jahrListe.length} ${jahrListe.length===1?"Pressung":"Pressungen"}${kgSum?` · aus ${kg(kgSum)} kg ${esc(obstWort)}`:""}${prevL!=null ? ` · <span class="${l>=prevL?"up":"down"}">${l>=prevL?"+":""}${prevL?Math.round((l-prevL)/prevL*100):0} %</span> ggü. ${jahre[pi]}` : ""}</div>
+        ${ausbeute ? `<div class="psub">Ø Ausbeute <b>${kg(ausbeute)} l</b> je 100 kg</div>` : ""}
+        ${gemischt ? `<div class="psub">inkl. gemischter Pressungen</div>` : ""}
+        ${nichtLiter.length ? `<div class="psub">dazu ${nichtLiter.map(b => esc(fmtMenge(b.menge, b.einheit))).join(", ")}</div>` : ""}
+      </div>
+    </div>
+    <div class="list" style="border:0">${jahrListe.map(batchRow).join("")}</div>
+    ${jahre.length > 1 ? `<div class="chart"><span class="eyebrow">Liter je Jahr</span>${barChart(jahre, totals, batchYear, `${name} je Jahr in Litern`)}</div>` : ""}
+  </section>`;
 }
 function viewErnte(){
   const years = [...new Set([...batches.map(batchYearOf), ...yieldYears()])].filter(Boolean).sort();
   const thisYear = String(new Date().getFullYear());
   if(!years.includes(thisYear)) years.push(thisYear);
   if(!batchYear || !years.includes(batchYear)) batchYear = thisYear;
-  const yb = batches.filter(b => batchYearOf(b) === batchYear && passPerson(b.by) && passErz(b)).sort((a,b) => String(b.datum).localeCompare(String(a.datum)));
-  const saft = yb.filter(isApfelsaft), andere = yb.filter(b => !isApfelsaft(b));
-  const saftL = sumBy(saft, b => b.einheit === "l");
-  const saftKg = saft.reduce((a,b) => a + (Number(b.obstKg)||0), 0);
-  const saftMitKg = saft.filter(b => b.obstKg > 0 && b.einheit === "l");
-  const ausbeute = saftMitKg.length ? sumBy(saftMitKg, () => true) / saftMitKg.reduce((a,b) => a + Number(b.obstKg), 0) * 100 : null;
+  const fb = batches.filter(b => passPerson(b.by) && passErz(b));
+  const yb = fb.filter(b => batchYearOf(b) === batchYear).sort((a,b) => String(b.datum).localeCompare(String(a.datum)));
+  const saefte = yb.filter(b => saftKey(b)), andere = yb.filter(b => !saftKey(b));
+  const saftKeys = [...new Set(saefte.map(saftKey))].sort((a,b) => (SAFT_ORDER.indexOf(a)+1 || 99) - (SAFT_ORDER.indexOf(b)+1 || 99));
+  const saftL = sumBy(saefte, b => b.einheit === "l");
   const glaeser = sumBy(yb, b => b.einheit === "Gläser");
   const obstIstBaum = erzObst !== "alle" && erzObst !== "Gemischt" && erzObst !== OHNE_OBST;
   const geerntet = trees.filter(t => !obstIstBaum || t.art === erzObst).reduce((a,t) => a + yieldOf(t, batchYear), 0);
   const weinPasst = erzTyp === "alle" && ["alle","Apfel","Gemischt"].includes(erzObst);
   const weinL = weinPasst ? casks.filter(c => String(c.angesetzt||"").startsWith(batchYear) && passPerson(c.by)).reduce((a,c) => a + (Number(c.menge)||0), 0) : null;
-  const fb = batches.filter(b => passPerson(b.by) && passErz(b));
-  const zeigeSaft = (erzTyp === "alle" || erzTyp === "Saft") && ["alle","Apfel","Gemischt",OHNE_OBST].includes(erzObst);
-  const zeigeAndere = !(erzTyp === "Saft" && ["Apfel","Gemischt"].includes(erzObst));
-  const filterAktiv = erzTyp !== "alle" || erzObst !== "alle";
-  const filterName = [erzTyp !== "alle" ? erzTyp : "", erzObst !== "alle" ? (erzObst === OHNE_OBST ? "ohne Obstangabe" : erzObst) : ""].filter(Boolean).join(" · ");
-  const saftYears = years.filter(y => fb.some(b => batchYearOf(b) === y && isApfelsaft(b)));
-  const saftTotals = saftYears.map(y => sumBy(fb, b => batchYearOf(b) === y && isApfelsaft(b) && b.einheit === "l"));
-  const prevIdx = saftYears.indexOf(batchYear) - 1, prevL = prevIdx >= 0 ? saftTotals[prevIdx] : null;
-  // andere Erzeugnisse nach Typ (+Einheit) bündeln
+  const filterAktiv = erzTyp !== "alle" || erzObst !== "alle" || personFilter !== "alle";
+  // weitere Erzeugnisse nach Typ (+Einheit) bündeln
   const groups = {};
   andere.forEach(b => { const k = b.typ + "|" + b.einheit; groups[k] ??= {typ:b.typ, einheit:b.einheit, menge:0, n:0, obst:new Set()}; groups[k].menge += Number(b.menge)||0; groups[k].n++; if(b.obst) groups[k].obst.add(b.obst); });
   const glist = Object.values(groups).sort((a,b) => Object.keys(VERARB_TYPEN).indexOf(a.typ) - Object.keys(VERARB_TYPEN).indexOf(b.typ));
+  const weitereCard = glist.length ? `<section class="card">
+      <span class="eyebrow">${saftKeys.length ? "Weitere Erzeugnisse" : "Erzeugnisse"} ${batchYear}</span>
+      <div class="ptiles">${glist.map(g => `<div class="ptile2"><span class="ptile">${vIcon(g.typ, 46, g.obst.size === 1 ? [...g.obst][0] : null)}</span>
+        <b>${esc(fmtMenge(g.menge, g.einheit))}</b><span>${esc(g.typ)}</span><small>${g.obst.size ? esc([...g.obst].join(", ")) : ""}</small></div>`).join("")}</div>
+      <div class="list" style="border:0">${andere.map(batchRow).join("")}</div>
+    </section>` : "";
+  const leer = !saftKeys.length && !glist.length;
   return `
-  ${erzChips()}
   <div class="chips">${years.map(y => `<button class="chip" data-byear="${y}" aria-pressed="${y===batchYear}">${y}</button>`).join("")}</div>
   <div class="stats stats4">
     <div class="stat"><div class="v">${kg(geerntet)}</div><div class="l">kg ${obstIstBaum ? esc(erzObst) : ""} geerntet ${batchYear}</div></div>
-    <div class="stat"><div class="v">${zeigeSaft ? kg(saftL) : "–"}</div><div class="l">Liter Apfelsaft</div></div>
-    <div class="stat"><div class="v">${kg(glaeser)}</div><div class="l">Gläser Eingemachtes${filterAktiv ? " (Auswahl)" : ""}</div></div>
+    <div class="stat"><div class="v">${kg(saftL)}</div><div class="l">Liter Saft</div></div>
+    <div class="stat"><div class="v">${kg(glaeser)}</div><div class="l">Gläser Eingemachtes</div></div>
     <div class="stat"><div class="v">${weinL == null ? "–" : kg(weinL)}</div><div class="l">Liter Apfelwein angesetzt</div></div>
   </div>
-  <div class="cols">
-    ${zeigeSaft ? `<section class="card prod"${zeigeAndere ? "" : ` style="grid-column:1/-1"`}>
-      <div class="phead"><span class="ptile big">${vIcon("Saft", 64, "Apfel", true)}</span>
-        <div class="pt"><span class="eyebrow">Apfelsaft ${batchYear}</span>
-          <div class="pbig">${kg(saftL)}<span> Liter</span></div>
-          <div class="psub">${saft.length ? `${saft.length} ${saft.length===1?"Pressung":"Pressungen"}${saftKg?` · aus ${kg(saftKg)} kg Äpfeln`:""}` : "noch nicht gepresst"}${prevL!=null ? ` · <span class="${saftL>=prevL?"up":"down"}">${saftL>=prevL?"+":""}${prevL?Math.round((saftL-prevL)/prevL*100):0} %</span> ggü. ${saftYears[prevIdx]}` : ""}</div>
-          ${ausbeute ? `<div class="psub">Ø Ausbeute <b>${kg(ausbeute)} l</b> je 100 kg</div>` : ""}
-        </div>
-      </div>
-      ${saft.length ? `<div class="list" style="border:0">${saft.map(batchRow).join("")}</div>` : `<p class="hint" style="margin:0">Tippe auf <b>+</b> und wähle „Saft“, um die gepressten Liter einzutragen.</p>`}
-      ${saftYears.length > 1 ? `<div class="chart"><span class="eyebrow">Liter je Jahr</span>${barChart(saftYears, saftTotals, batchYear, "Apfelsaft je Jahr in Litern")}</div>` : ""}
-    </section>` : ""}
-    ${zeigeAndere ? `<section class="card"${zeigeSaft ? "" : ` style="grid-column:1/-1"`}>
-      <span class="eyebrow">${filterAktiv && !zeigeSaft ? esc(filterName) : "Weitere Erzeugnisse"} ${batchYear}</span>
-      ${glist.length ? `<div class="ptiles">${glist.map(g => `<div class="ptile2"><span class="ptile">${vIcon(g.typ, 46, g.obst.size === 1 ? [...g.obst][0] : null)}</span>
-          <b>${esc(fmtMenge(g.menge, g.einheit))}</b><span>${esc(g.typ)}</span><small>${g.obst.size ? esc([...g.obst].join(", ")) : ""}</small></div>`).join("")}</div>
-        <div class="list" style="border:0">${andere.map(batchRow).join("")}</div>`
-        : filterAktiv ? `<p class="hint" style="margin:0">Für ${esc(filterName)} ist ${batchYear} nichts eingetragen.</p>`
-        : `<div class="ptiles muted">${["Gelee","Marmelade / Konfitüre","Mus / Kompott","Most / Cidre","Dörrobst"].map(t => `<div class="ptile2"><span class="ptile">${vIcon(t, 46)}</span><span>${esc(t)}</span></div>`).join("")}</div>
-          <p class="hint" style="margin:0">Noch nichts eingetragen. Über <b>+</b> erfasst du Gelee, Marmelade, Mus, Most, Dörrobst und mehr.</p>`}
-    </section>` : ""}
-  </div>`;
+  ${leer ? (filterAktiv
+      ? `<div class="empty">Für diese Auswahl ist ${batchYear} nichts eingetragen.</div>`
+      : `<section class="card"><span class="eyebrow">Erzeugnisse ${batchYear}</span>
+          <div class="ptiles muted">${["Saft","Gelee","Marmelade / Konfitüre","Mus / Kompott","Most / Cidre","Dörrobst"].map(t => `<div class="ptile2"><span class="ptile">${vIcon(t, 46, t === "Saft" ? "Apfel" : null, t === "Saft")}</span><span>${esc(t)}</span></div>`).join("")}</div>
+          <p class="hint" style="margin:0">Für ${batchYear} ist noch nichts eingetragen. Über <b>+</b> erfasst du Saft, Gelee, Marmelade, Mus, Most, Dörrobst und mehr. Für jeden Saft, den du einträgst, erscheint hier eine eigene Übersicht.</p></section>`)
+    : `<div class="cols">${saftKeys.map(k => saftCard(k, saefte.filter(b => saftKey(b) === k), fb.filter(b => saftKey(b) === k), years)).join("")}${weitereCard}</div>`}`;
 }
 
 function sheetBatch(d, isNew){
@@ -1753,7 +1788,8 @@ document.addEventListener("click", async e => {
   if(d.person){ personFilter = d.person; render(); return; }
   if(d.erztyp){ erzTyp = d.erztyp; render(); return; }
   if(d.erzobst){ erzObst = d.erzobst; render(); return; }
-  if(el.hasAttribute("data-erzreset")){ erzTyp = "alle"; erzObst = "alle"; render(); return; }
+  if(el.hasAttribute("data-erzreset") || el.hasAttribute("data-allreset")){ erzTyp = "alle"; erzObst = "alle"; personFilter = "alle"; render(); return; }
+  if(el.id === "btnFilter"){ filterOffen = !filterOffen; render(); return; }
   if(d.logp){ sheetState.filter = d.logp; renderSheet(); return; }
   if(d.vlogp){ vlogFilter = d.vlogp; render(); return; }
   if(d.vsub){ vsub = d.vsub; window.OG_FRESH = true; render(); window.scrollTo(0, 0); return; }
