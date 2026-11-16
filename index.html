@@ -591,7 +591,9 @@ const EXPORT_FORMAT = "obstgarten-export", EXPORT_VERSION = 1;
 const DEFAULT_FLAECHEN = [{id:"g1", name:"Grundstück 1", breite:20, laenge:60, reihen:12},{id:"g2", name:"Grundstück 2", breite:20, laenge:60, reihen:12}];
 let db = null, trees = [], garden = {name:"", flaechen: DEFAULT_FLAECHEN}, loaded = false, readOnly = false;
 let batches = [], batchYear = null, casks = [];
-let userApi = null, meId = null, canWrite = null, people = {}, protokoll = [], personFilter = "alle";
+let userApi = null, meId = null, canWrite = null, people = {}, protokoll = [];
+const personSel = new Set(), typSel = new Set(), obstSel = new Set();
+const toggleSel = (set, v) => { if(v === "alle") set.clear(); else if(set.has(v)) set.delete(v); else set.add(v); };
 let ertragSeg = "uebersicht";
 try{ const v = localStorage.getItem("obstgarten.ertragSeg"); if(v === "statistik" || v === "uebersicht") ertragSeg = v; }catch(_){}
 let tab = "plan", zoom = 1, artFilter = "Alle", plotFilter = "Alle", query = "", statYear = null;
@@ -709,7 +711,7 @@ async function refreshPeople(){
 }
 /* Wer hat einen Ertrag/Eintrag erfasst -> für Filter */
 const yieldBy = (t, y) => ((t.ertragMeta||{})[y] || {}).by || UNBEKANNT;
-const passPerson = id => personFilter === "alle" || (id || UNBEKANNT) === personFilter;
+const passPerson = id => !personSel.size || personSel.has(id || UNBEKANNT);
 const yieldOf = (t, y) => passPerson(yieldBy(t, y)) ? (Number((t.ertrag||{})[y]) || 0) : 0;
 function personChips(){
   const ids = new Set();
@@ -717,9 +719,9 @@ function personChips(){
   batches.forEach(b => ids.add(b.by || UNBEKANNT));
   casks.forEach(c => ids.add(c.by || UNBEKANNT));
   const list = [...ids].sort((a,b) => a === UNBEKANNT ? 1 : b === UNBEKANNT ? -1 : personName(a).localeCompare(personName(b)));
-  if(list.length < 2 && personFilter === "alle") return "";
-  if(personFilter !== "alle" && !list.includes(personFilter)) list.push(personFilter);
-  return `<div class="frow"><span class="flabel">Person</span><div class="chips pchips" role="group" aria-label="Nach Person filtern"><button class="chip" data-person="alle" aria-pressed="${personFilter==="alle"}">Alle</button>${list.map(id => `<button class="chip" data-person="${esc(id)}" aria-pressed="${personFilter===id}">${id === UNBEKANNT ? "" : avatar(id, 18)}${esc(id === UNBEKANNT ? "Ohne Angabe" : personName(id))}</button>`).join("")}</div></div>`;
+  if(list.length < 2 && !personSel.size) return "";
+  personSel.forEach(id => { if(!list.includes(id)) list.push(id); });
+  return `<div class="frow"><span class="flabel">Person</span><div class="chips pchips" role="group" aria-label="Nach Person filtern, mehrere möglich"><button class="chip" data-person="alle" aria-pressed="${!personSel.size}">Alle</button>${list.map(id => `<button class="chip" data-person="${esc(id)}" aria-pressed="${personSel.has(id)}">${id === UNBEKANNT ? "" : avatar(id, 18)}${esc(id === UNBEKANNT ? "Ohne Angabe" : personName(id))}</button>`).join("")}</div></div>`;
 }
 
 /* ---------- Export / Import (vorbereitet) ---------- */
@@ -1039,16 +1041,18 @@ function sumBy(list, pred){ return list.filter(pred).reduce((a,b) => a + (Number
 let filterOffen = false;
 function viewErtragTab(){
   const erz = ertragSeg === "uebersicht";
-  const aktiv = [personFilter !== "alle" ? (personFilter === UNBEKANNT ? "Ohne Angabe" : personName(personFilter)) : "",
-    erz && erzTyp !== "alle" ? erzTyp : "", erz && erzObst !== "alle" ? (erzObst === OHNE_OBST ? "ohne Obstangabe" : erzObst) : ""].filter(Boolean);
+  const nm = id => id === UNBEKANNT ? "Ohne Angabe" : personName(id);
+  const aktiv = [personSel.size ? [...personSel].map(nm).join(", ") : "",
+    erz && typSel.size ? [...typSel].join(", ") : "", erz && obstSel.size ? [...obstSel].map(o => o === OHNE_OBST ? "ohne Obstangabe" : o).join(", ") : ""].filter(Boolean);
+  const anzahl = personSel.size + (erz ? typSel.size + obstSel.size : 0);
   const pc = personChips(), ec = erz ? erzChips() : "";
   const hatFilter = !!(pc || ec);
   const seg = `<div class="row" style="gap:8px;flex-wrap:nowrap">
     <div class="seg" role="group" aria-label="Ansicht"><button data-seg="uebersicht" aria-pressed="${ertragSeg==="uebersicht"}">Erzeugnisse</button><button data-seg="statistik" aria-pressed="${ertragSeg==="statistik"}">Erntestatistik</button></div>
     <span class="spacer"></span>
-    ${hatFilter ? `<button class="iconbtn fbtn" id="btnFilter" aria-expanded="${filterOffen}" aria-label="Filter ${filterOffen ? "ausblenden" : "anzeigen"}"><svg viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>${aktiv.length ? `<span class="fbadge">${aktiv.length}</span>` : ""}</button>` : ""}
+    ${hatFilter ? `<button class="iconbtn fbtn" id="btnFilter" aria-expanded="${filterOffen}" aria-label="Filter ${filterOffen ? "ausblenden" : "anzeigen"}"><svg viewBox="0 0 24 24"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>${anzahl ? `<span class="fbadge">${anzahl}</span>` : ""}</button>` : ""}
   </div>
-  ${hatFilter && filterOffen ? `<div class="fpanel">${pc}${ec}${filterResetBtn()}</div>` : ""}
+  ${hatFilter && filterOffen ? `<div class="fpanel">${pc}${ec}<p class="hint" style="margin:0">Mehrere Einträge je Zeile wählbar. Innerhalb einer Zeile gilt „oder“, zwischen den Zeilen „und“.</p>${filterResetBtn()}</div>` : ""}
   ${hatFilter && !filterOffen && aktiv.length ? `<div class="factive"><span>Gefiltert: <b>${esc(aktiv.join(" · "))}</b></span><button class="linkbtn" data-allreset>Zurücksetzen</button></div>` : ""}`;
   return seg + (erz ? viewErnte() : viewErtrag());
 }
@@ -1059,25 +1063,25 @@ function batchRow(b){
     <small>${fmtDate(b.datum)}${b.ort?` · ${esc(b.ort)}`:""}${b.obstKg?` · aus ${kg(b.obstKg)} kg`:""}${aus}${byLine(b.by)}</small></span><span></span></button>`;
 }
 /* Filter in „Erzeugnisse“: Erzeugnisart und Fruchtart */
-let erzTyp = "alle", erzObst = "alle";
 const OHNE_OBST = "ohne";
 const obstKey = b => b.obst || OHNE_OBST;
-const passErz = b => (erzTyp === "alle" || b.typ === erzTyp) && (erzObst === "alle" || obstKey(b) === erzObst);
+const passErz = b => (!typSel.size || typSel.has(b.typ)) && (!obstSel.size || obstSel.has(obstKey(b)));
 function filterResetBtn(){
-  return (personFilter !== "alle" || erzTyp !== "alle" || erzObst !== "alle") ? `<button class="linkbtn" data-allreset style="align-self:flex-start;padding:2px 0;font-size:.9rem">Alle Filter zurücksetzen</button>` : "";
+  return (personSel.size || typSel.size || obstSel.size) ? `<button class="linkbtn" data-allreset style="align-self:flex-start;padding:2px 0;font-size:.9rem">Alle Filter zurücksetzen</button>` : "";
 }
 function erzChips(){
   const typen = Object.keys(VERARB_TYPEN).filter(k => batches.some(b => b.typ === k));
-  if(erzTyp !== "alle" && !typen.includes(erzTyp)) typen.push(erzTyp);
+  typSel.forEach(t => { if(!typen.includes(t)) typen.push(t); });
   const obstOrder = ["Apfel","Gemischt", ...ARTEN.filter(a => a !== "Apfel")];
   const obst = [...new Set(batches.map(obstKey))].sort((a,b) => (a === OHNE_OBST) - (b === OHNE_OBST) || obstOrder.indexOf(a) - obstOrder.indexOf(b));
-  if(erzObst !== "alle" && !obst.includes(erzObst)) obst.push(erzObst);
+  obstSel.forEach(o => { if(!obst.includes(o)) obst.push(o); });
+  const einObst = obstSel.size === 1 ? [...obstSel][0] : null;
   if(typen.length < 2 && obst.length < 2) return "";
   const lbl = t => t === "Frisch verbraucht / verschenkt" ? "Frisch / verschenkt" : t;
   const dot = o => o === OHNE_OBST || o === "Gemischt" ? "" : `<i class="dot" style="background:${FRUCHTFARBE[o] || "var(--muted)"}"></i>`;
   return `<div class="filterrows">
-    ${typen.length > 1 ? `<div class="frow"><span class="flabel">Erzeugnis</span><div class="chips" role="group" aria-label="Nach Erzeugnis filtern"><button class="chip" data-erztyp="alle" aria-pressed="${erzTyp==="alle"}">Alle</button>${typen.map(t => `<button class="chip ichip" data-erztyp="${esc(t)}" aria-pressed="${erzTyp===t}">${vIcon(t, 18, erzObst !== "alle" && erzObst !== OHNE_OBST ? erzObst : null, t === "Saft" && (erzObst === "alle" || erzObst === "Apfel" || erzObst === "Gemischt"))}${esc(lbl(t))}</button>`).join("")}</div></div>` : ""}
-    ${obst.length > 1 ? `<div class="frow"><span class="flabel">Obst</span><div class="chips" role="group" aria-label="Nach Obst filtern"><button class="chip" data-erzobst="alle" aria-pressed="${erzObst==="alle"}">Alle</button>${obst.map(o => `<button class="chip ichip" data-erzobst="${esc(o)}" aria-pressed="${erzObst===o}">${dot(o)}${esc(o === OHNE_OBST ? "Ohne Angabe" : o)}</button>`).join("")}</div></div>` : ""}
+    ${typen.length > 1 ? `<div class="frow"><span class="flabel">Erzeugnis</span><div class="chips" role="group" aria-label="Nach Erzeugnis filtern, mehrere möglich"><button class="chip" data-erztyp="alle" aria-pressed="${!typSel.size}">Alle</button>${typen.map(t => `<button class="chip ichip" data-erztyp="${esc(t)}" aria-pressed="${typSel.has(t)}">${vIcon(t, 18, einObst && einObst !== OHNE_OBST ? einObst : null, t === "Saft" && (!einObst || einObst === "Apfel" || einObst === "Gemischt"))}${esc(lbl(t))}</button>`).join("")}</div></div>` : ""}
+    ${obst.length > 1 ? `<div class="frow"><span class="flabel">Obst</span><div class="chips" role="group" aria-label="Nach Obst filtern, mehrere möglich"><button class="chip" data-erzobst="alle" aria-pressed="${!obstSel.size}">Alle</button>${obst.map(o => `<button class="chip ichip" data-erzobst="${esc(o)}" aria-pressed="${obstSel.has(o)}">${dot(o)}${esc(o === OHNE_OBST ? "Ohne Angabe" : o)}</button>`).join("")}</div></div>` : ""}
   </div>`;
 }
 /* Säfte je Obstart; Apfel und „Gemischt“ (Wiesenmischung) gelten als Apfelsaft */
@@ -1122,11 +1126,12 @@ function viewErnte(){
   const saftKeys = [...new Set(saefte.map(saftKey))].sort((a,b) => (SAFT_ORDER.indexOf(a)+1 || 99) - (SAFT_ORDER.indexOf(b)+1 || 99));
   const saftL = sumBy(saefte, b => b.einheit === "l");
   const glaeser = sumBy(yb, b => b.einheit === "Gläser");
-  const obstIstBaum = erzObst !== "alle" && erzObst !== "Gemischt" && erzObst !== OHNE_OBST;
-  const geerntet = trees.filter(t => !obstIstBaum || t.art === erzObst).reduce((a,t) => a + yieldOf(t, batchYear), 0);
-  const weinPasst = erzTyp === "alle" && ["alle","Apfel","Gemischt"].includes(erzObst);
+  const baumArten = [...obstSel].filter(o => o !== "Gemischt" && o !== OHNE_OBST);
+  const obstIstBaum = obstSel.size > 0 && baumArten.length > 0 && !obstSel.has("Gemischt");
+  const geerntet = trees.filter(t => !obstIstBaum || baumArten.includes(t.art)).reduce((a,t) => a + yieldOf(t, batchYear), 0);
+  const weinPasst = !typSel.size && (!obstSel.size || obstSel.has("Apfel") || obstSel.has("Gemischt"));
   const weinL = weinPasst ? casks.filter(c => String(c.angesetzt||"").startsWith(batchYear) && passPerson(c.by)).reduce((a,c) => a + (Number(c.menge)||0), 0) : null;
-  const filterAktiv = erzTyp !== "alle" || erzObst !== "alle" || personFilter !== "alle";
+  const filterAktiv = !!(typSel.size || obstSel.size || personSel.size);
   // weitere Erzeugnisse nach Typ (+Einheit) bündeln
   const groups = {};
   andere.forEach(b => { const k = b.typ + "|" + b.einheit; groups[k] ??= {typ:b.typ, einheit:b.einheit, menge:0, n:0, obst:new Set()}; groups[k].menge += Number(b.menge)||0; groups[k].n++; if(b.obst) groups[k].obst.add(b.obst); });
@@ -1141,7 +1146,7 @@ function viewErnte(){
   return `
   <div class="chips">${years.map(y => `<button class="chip" data-byear="${y}" aria-pressed="${y===batchYear}">${y}</button>`).join("")}</div>
   <div class="stats stats4">
-    <div class="stat"><div class="v">${kg(geerntet)}</div><div class="l">kg ${obstIstBaum ? esc(erzObst) : ""} geerntet ${batchYear}</div></div>
+    <div class="stat"><div class="v">${kg(geerntet)}</div><div class="l">kg ${obstIstBaum ? esc(baumArten.join(", ")) : ""} geerntet ${batchYear}</div></div>
     <div class="stat"><div class="v">${kg(saftL)}</div><div class="l">Liter Saft</div></div>
     <div class="stat"><div class="v">${kg(glaeser)}</div><div class="l">Gläser Eingemachtes</div></div>
     <div class="stat"><div class="v">${weinL == null ? "–" : kg(weinL)}</div><div class="l">Liter Apfelwein angesetzt</div></div>
@@ -1467,7 +1472,7 @@ function niceStep(max){ const raw = max/4, p = Math.pow(10, Math.floor(Math.log1
 
 function viewErtrag(){
   const years = yieldYears().filter(y => trees.some(t => yieldOf(t, y) > 0));
-  if(!years.length) return personFilter !== "alle" ? `<div class="empty">Für diese Person sind keine Erträge erfasst.</div>` : `<div class="empty">Noch keine Erträge erfasst. Öffne einen Baum und trage dort unter „Ertrag (kg)“ die geerntete Menge ein.</div>`;
+  if(!years.length) return personSel.size ? `<div class="empty">Für diese Person sind keine Erträge erfasst.</div>` : `<div class="empty">Noch keine Erträge erfasst. Öffne einen Baum und trage dort unter „Ertrag (kg)“ die geerntete Menge ein.</div>`;
   if(!statYear || !years.includes(statYear)) statYear = years[years.length-1];
   const tot = y => trees.reduce((s,t) => s + yieldOf(t, y), 0);
   const totals = years.map(tot);
@@ -1496,7 +1501,7 @@ function viewErtrag(){
   <div class="card"><span class="eyebrow">Ertragsstärkste Bäume · ${statYear}</span>
     ${top.length ? `<div class="list" style="border:0">${top.map(t => { const p = prev ? yieldOf(t, prev) : 0; const d = p ? (yieldOf(t, statYear)-p)/p*100 : null; return treeItem(t, `<span style="text-align:right;font-variant-numeric:tabular-nums"><b>${kg(yieldOf(t, statYear))} kg</b><br><small>${prev?dl(d):""}</small></span>`); }).join("")}</div>` : `<p class="hint">Für ${statYear} ist kein Ertrag erfasst.</p>`}
   </div></div>
-  ${personFilter === "alle" ? (() => {
+  ${!personSel.size ? (() => {
     const rows = {};
     const row = id => rows[id] ??= {kg:0, baeume:0, eintraege:0};
     trees.forEach(t => { const v = Number((t.ertrag||{})[statYear])||0; if(v){ const r = row(yieldBy(t, statYear)); r.kg += v; r.baeume++; } });
@@ -1785,10 +1790,10 @@ document.addEventListener("click", async e => {
   if(window.OG_HOST && OG_HOST.onClick && await OG_HOST.onClick(el, d)) return;
   if(d.pfilter){ pflegeFilter = d.pfilter; render(); return; }
   if(d.psort){ pflegeSort = d.psort; render(); return; }
-  if(d.person){ personFilter = d.person; render(); return; }
-  if(d.erztyp){ erzTyp = d.erztyp; render(); return; }
-  if(d.erzobst){ erzObst = d.erzobst; render(); return; }
-  if(el.hasAttribute("data-erzreset") || el.hasAttribute("data-allreset")){ erzTyp = "alle"; erzObst = "alle"; personFilter = "alle"; render(); return; }
+  if(d.person){ if(el.closest(".fpanel")) toggleSel(personSel, d.person); else { personSel.clear(); if(d.person !== "alle") personSel.add(d.person); } render(); return; }
+  if(d.erztyp){ toggleSel(typSel, d.erztyp); render(); return; }
+  if(d.erzobst){ toggleSel(obstSel, d.erzobst); render(); return; }
+  if(el.hasAttribute("data-erzreset") || el.hasAttribute("data-allreset")){ typSel.clear(); obstSel.clear(); personSel.clear(); render(); return; }
   if(el.id === "btnFilter"){ filterOffen = !filterOffen; render(); return; }
   if(d.logp){ sheetState.filter = d.logp; renderSheet(); return; }
   if(d.vlogp){ vlogFilter = d.vlogp; render(); return; }
